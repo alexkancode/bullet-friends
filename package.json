@@ -1,0 +1,23 @@
+{
+  "name": "bullet-friends",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -b && tsc --noEmit -p packages/client",
+    "test": "vitest run",
+    "build": "tsc -b && npm run build -w @bullet/client",
+    "dev:server": "npm run dev -w @bullet/server",
+    "dev:client": "npm run dev -w @bullet/client"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^4.1.10"
+  }
+}

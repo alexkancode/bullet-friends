@@ -1,0 +1,10 @@
+{
+  "join": { "t": "join", "room": "GLHF", "name": "Alex", "protocolVersion": 1 },
+  "input": { "t": "input", "seq": 12, "move": { "x": 1, "y": 0 } },
+  "start": { "t": "start" },
+  "pickGear": { "t": "pickGear", "gearId": "top-hat" },
+  "playAgain": { "t": "playAgain" },
+  "welcome": { "t": "welcome", "playerId": "ab12", "room": "GLHF" },
+  "roster": { "t": "roster", "players": [{ "id": "ab12", "name": "Alex" }] },
+  "error": { "t": "error", "code": "version", "message": "update your client" }
+}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <defs>
+    <linearGradient id="silk" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3c3c44"/>
+      <stop offset="45%" stop-color="#17171c"/>
+      <stop offset="100%" stop-color="#2c2c34"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="66" rx="52" ry="10" fill="#17171c" stroke="#000000" stroke-width="2"/>
+  <rect x="30" y="12" width="60" height="54" rx="6" fill="url(#silk)" stroke="#000000" stroke-width="2"/>
+  <rect x="30" y="46" width="60" height="12" fill="#8c2f3f"/>
+  <ellipse cx="60" cy="13" rx="30" ry="7" fill="#3c3c44" stroke="#000000" stroke-width="2"/>
+  <path d="M36 20 C38 34 38 44 37 56" stroke="#5a5a66" stroke-width="3" fill="none" opacity="0.7"/>
+</svg>

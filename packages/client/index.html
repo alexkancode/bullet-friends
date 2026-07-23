@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bullet Friends</title>
+    <link rel="stylesheet" href="./src/styles/main.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <section id="hud" class="hud" hidden>
+      <div class="hud-top">
+        <span id="hud-wave" class="hud-wave">Wave 1</span>
+        <div class="meter meter-timer"><div id="hud-timer-fill" class="meter-fill"></div></div>
+      </div>
+      <div class="hud-bottom">
+        <span id="hud-level" class="hud-level">Lv 1</span>
+        <div class="meter meter-hp"><div id="hud-hp-fill" class="meter-fill"></div></div>
+        <span id="hud-hp-label" class="hud-hp-label"></span>
+        <div class="meter meter-xp"><div id="hud-xp-fill" class="meter-fill"></div></div>
+      </div>
+    </section>
+
+    <section id="lobby" class="overlay">
+      <div class="panel lobby-panel">
+        <h1 class="game-title">Bullet Friends</h1>
+        <p class="tagline">Your face is the potato.</p>
+        <label class="field">
+          <span>Name</span>
+          <input id="name-input" maxlength="24" placeholder="Spud" />
+        </label>
+        <label class="field">
+          <span>Room code (blank for a new room)</span>
+          <input id="room-input" maxlength="8" placeholder="GLHF" />
+        </label>
+        <button id="join-button" class="button button-primary">Join with webcam</button>
+        <p id="lobby-error" class="error-line"></p>
+        <p id="cam-note" class="cam-note"></p>
+        <div id="start-panel" hidden>
+          <p class="room-line">Room <strong id="room-label"></strong> — share the code with friends</p>
+          <ul id="roster-list" class="roster"></ul>
+          <button id="start-button" class="button button-primary">Start run</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="shop" class="overlay" hidden>
+      <div class="panel shop-panel">
+        <h2 class="panel-title">Wave cleared — pick your gear</h2>
+        <div id="shop-cards" class="gear-cards"></div>
+        <p id="shop-waiting" class="cam-note" hidden></p>
+      </div>
+    </section>
+
+    <section id="stats" class="overlay" hidden>
+      <div class="panel stats-panel">
+        <h2 class="panel-title">Run over — how you grew</h2>
+        <div id="stats-legend" class="legend"></div>
+        <div id="stats-charts" class="charts-grid"></div>
+        <div id="stats-table-host" class="table-host"></div>
+        <button id="play-again-button" class="button button-primary">Back to lobby</button>
+      </div>
+    </section>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

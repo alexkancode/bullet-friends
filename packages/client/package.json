@@ -1,0 +1,17 @@
+{
+  "name": "@bullet/client",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bullet/core": "0.1.0",
+    "@bullet/protocol": "0.1.0"
+  },
+  "devDependencies": {
+    "vite": "^8.1.5"
+  }
+}

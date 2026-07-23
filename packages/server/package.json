@@ -1,0 +1,18 @@
+{
+  "name": "@bullet/server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsc -b .. && node dist/index.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@bullet/core": "0.1.0",
+    "@bullet/protocol": "0.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13"
+  }
+}
