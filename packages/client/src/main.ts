@@ -20,6 +20,8 @@ import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
 import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
 import { apiBaseFromWsUrl, createGroupApi, ApiError } from './net/api.js'
 import type { ApiGroup } from './net/api.js'
+import { AudioEngine } from './audio/engine.js'
+import { detectAudioEvents, musicForPhase } from './audio/events.js'
 
 const INPUT_SEND_MS = 50
 const ART_BASE = import.meta.env.BASE_URL
@@ -87,6 +89,7 @@ const ui = {
   historyTitle: el('history-title'),
   historyTableHost: el('history-table-host'),
   historyCloseButton: el<HTMLButtonElement>('history-close-button'),
+  audioToggle: el<HTMLButtonElement>('audio-toggle'),
   canvas: el<HTMLCanvasElement>('game')
 }
 
@@ -120,6 +123,19 @@ let selfId: string | undefined
 let cameraStarted = false
 let shownPhase: Phase | 'none' = 'none'
 let renderedOfferKey = ''
+let lastAudioState: GameState | undefined
+const audio = new AudioEngine(ART_BASE, browserPlatform.loadAudioMuted())
+
+function reflectAudioToggle(): void {
+  ui.audioToggle.textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'
+}
+
+ui.audioToggle.addEventListener('click', () => {
+  audio.setMuted(!audio.isMuted())
+  browserPlatform.saveAudioMuted(audio.isMuted())
+  reflectAudioToggle()
+})
+reflectAudioToggle()
 
 function renderFlow(): void {
   const step = joined ? 'staging' : nextStep(profile, activeGroup !== undefined)
@@ -320,6 +336,7 @@ ui.playAgainButton.addEventListener('click', () => socket?.send({ t: 'playAgain'
 
 async function joinGame(): Promise<void> {
   if (!profile || !activeGroup || !sessionToken) return
+  audio.enable()
   ui.playButton.disabled = true
   ui.groupNote.textContent = ''
   try {
@@ -330,7 +347,12 @@ async function joinGame(): Promise<void> {
           joined = true
           renderFlow()
         }
-        if (msg.t === 'snapshot') buffer.push(performance.now(), msg.state)
+        if (msg.t === 'snapshot') {
+          buffer.push(performance.now(), msg.state)
+          for (const event of detectAudioEvents(lastAudioState, msg.state, selfId)) audio.play(event)
+          audio.setMusic(musicForPhase(msg.state.phase))
+          lastAudioState = msg.state
+        }
         if (msg.t === 'error') ui.groupNote.textContent = msg.message
       },
       onCamFrame: (playerId, jpeg) => void feeds.accept(playerId, jpeg),
@@ -387,6 +409,7 @@ function syncScreens(state: GameState): void {
     if (shownPhase !== phase || offerKey !== renderedOfferKey) {
       renderedOfferKey = offerKey
       renderShop(ui.shopCards, ui.shopWaiting, state, selfId, ART_BASE, gearId => {
+        audio.play('gearPick')
         socket?.send({ t: 'pickGear', gearId })
       })
     }

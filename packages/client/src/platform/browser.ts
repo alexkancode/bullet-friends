@@ -1,6 +1,7 @@
 import type { PlatformServices } from './services.js'
 
 const SESSION_KEY = 'bullet-friends.session'
+const MUTED_KEY = 'bullet-friends.muted'
 
 export const browserPlatform: PlatformServices = {
   async getCameraStream() {
@@ -21,5 +22,11 @@ export const browserPlatform: PlatformServices = {
   },
   clearSession() {
     localStorage.removeItem(SESSION_KEY)
+  },
+  loadAudioMuted() {
+    return localStorage.getItem(MUTED_KEY) === 'true'
+  },
+  saveAudioMuted(muted: boolean) {
+    localStorage.setItem(MUTED_KEY, String(muted))
   }
 }
