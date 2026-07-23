@@ -12,6 +12,11 @@ import { drawScene } from './render/scene.js'
 import { updateHud } from './ui/hud.js'
 import { renderShop } from './ui/shop.js'
 import { renderStatsCharts } from './ui/statsCharts.js'
+import { renderHistoryTable } from './ui/historyTable.js'
+import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
+import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
+import { apiBaseFromWsUrl, createGroupApi } from './net/api.js'
+import type { ApiGroup } from './net/api.js'
 
 const INPUT_SEND_MS = 50
 const ART_BASE = import.meta.env.BASE_URL
@@ -49,7 +54,21 @@ const ui = {
   statsCharts: el('stats-charts'),
   statsTable: el('stats-table-host'),
   playAgainButton: el<HTMLButtonElement>('play-again-button'),
-  canvas: el<HTMLCanvasElement>('game')
+  canvas: el<HTMLCanvasElement>('game'),
+  authPanel: el('auth-panel'),
+  gsiButton: el('gsi-button'),
+  groupPanel: el('group-panel'),
+  groupGreeting: el('group-greeting'),
+  groupSelect: el<HTMLSelectElement>('group-select'),
+  groupNameInput: el<HTMLInputElement>('group-name-input'),
+  groupCreateButton: el<HTMLButtonElement>('group-create-button'),
+  inviteButton: el<HTMLButtonElement>('invite-button'),
+  historyButton: el<HTMLButtonElement>('history-button'),
+  groupNote: el('group-note'),
+  history: el('history'),
+  historyTitle: el('history-title'),
+  historyTableHost: el('history-table-host'),
+  historyCloseButton: el<HTMLButtonElement>('history-close-button')
 }
 
 const hudElements = {
@@ -144,9 +163,101 @@ async function joinGame(): Promise<void> {
     ui.joinButton.disabled = false
     return
   }
-  socket.send({ t: 'join', room, name, protocolVersion: PROTOCOL_VERSION })
+  const idToken = auth.token()
+  const groupId = ui.groupSelect.value
+  socket.send({
+    t: 'join',
+    room,
+    name,
+    protocolVersion: PROTOCOL_VERSION,
+    ...(idToken && groupId ? { groupId, idToken } : {})
+  })
   await startCamera()
 }
+
+const clientIdEnv = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+const auth = clientIdEnv ? createGoogleAuthProvider(clientIdEnv) : nullAuthProvider
+const groupApi = createGroupApi(apiBaseFromWsUrl(serverUrl()), auth.token)
+let selectedGroup: ApiGroup | undefined
+
+function note(text: string): void {
+  ui.groupNote.textContent = text
+}
+
+async function refreshGroups(): Promise<void> {
+  const me = await groupApi.me()
+  ui.groupSelect.replaceChildren()
+  for (const group of me.groups) {
+    const option = document.createElement('option')
+    option.value = group.id
+    option.textContent = group.name
+    ui.groupSelect.append(option)
+  }
+  selectedGroup = me.groups.find(g => g.id === ui.groupSelect.value)
+}
+
+async function onSignedIn(name: string): Promise<void> {
+  ui.groupGreeting.textContent = `Signed in as ${name}`
+  ui.groupPanel.hidden = false
+  const invite = inviteCodeFromSearch(location.search)
+  if (invite) {
+    const joined = await groupApi.acceptInvite(invite)
+    note(joined ? `Joined group ${joined.name}` : 'That invite link was already used')
+  }
+  await refreshGroups()
+}
+
+if (auth.enabled) {
+  ui.authPanel.hidden = false
+  auth.renderButton(ui.gsiButton, (_token, profile) => void onSignedIn(profile.name).catch(() => note('Could not load your groups')))
+}
+
+ui.groupSelect.addEventListener('change', () => {
+  selectedGroup = undefined
+  void refreshGroups()
+})
+ui.groupCreateButton.addEventListener('click', () => {
+  const name = ui.groupNameInput.value.trim()
+  if (!name) return
+  void groupApi
+    .createGroup(name)
+    .then(async group => {
+      ui.groupNameInput.value = ''
+      await refreshGroups()
+      ui.groupSelect.value = group.id
+      note(`Created group ${group.name}`)
+    })
+    .catch(() => note('Could not create the group'))
+})
+ui.inviteButton.addEventListener('click', () => {
+  const groupId = ui.groupSelect.value
+  if (!groupId) return
+  void groupApi
+    .createInvite(groupId)
+    .then(code => {
+      const link = inviteUrl(location.href, code)
+      return navigator.clipboard
+        .writeText(link)
+        .then(() => note('Invite link copied to clipboard'))
+        .catch(() => note(`Invite link: ${link}`))
+    })
+    .catch(() => note('Could not create an invite'))
+})
+ui.historyButton.addEventListener('click', () => {
+  const groupId = ui.groupSelect.value
+  if (!groupId) return
+  void groupApi
+    .history(groupId)
+    .then(runs => {
+      ui.historyTitle.textContent = `Run history — ${selectedGroup?.name ?? ui.groupSelect.selectedOptions[0]?.textContent ?? ''}`
+      renderHistoryTable(ui.historyTableHost, runs)
+      ui.history.hidden = false
+    })
+    .catch(() => note('Could not load history'))
+})
+ui.historyCloseButton.addEventListener('click', () => {
+  ui.history.hidden = true
+})
 
 async function startCamera(): Promise<void> {
   const stream = await browserPlatform.getCameraStream()

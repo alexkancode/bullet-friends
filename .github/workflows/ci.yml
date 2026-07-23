@@ -26,6 +26,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SERVER_URL: ${{ vars.SERVER_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:

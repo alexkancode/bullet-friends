@@ -5,6 +5,8 @@ export interface JoinMessage {
   room: string
   name: string
   protocolVersion: number
+  groupId?: string
+  idToken?: string
 }
 
 export interface InputMessage {

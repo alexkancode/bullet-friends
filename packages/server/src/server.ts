@@ -5,10 +5,15 @@ import type { ClientMessage } from '@bullet/protocol'
 import type { Room } from './rooms.js'
 import { RoomManager } from './rooms.js'
 import { FrameRelay } from './relay.js'
+import { handleApi, sendJson } from './api.js'
+import type { TokenVerifier } from './auth/verifier.js'
+import type { GroupStore } from './groups/store.js'
 
 export interface ServerOptions {
   port: number
   seed?: number
+  verifier?: TokenVerifier
+  store?: GroupStore
 }
 
 export interface RunningServer {
@@ -20,18 +25,34 @@ const CAM_FRAMES_PER_SECOND = 12
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
   const now = () => Date.now()
-  const rooms = new RoomManager(options.seed ?? Date.now(), now)
+  const rooms = new RoomManager(options.seed ?? Date.now(), now, options.store)
   const relay = new FrameRelay(CAM_FRAMES_PER_SECOND, now)
 
   const httpServer = createServer((req, res) => {
+    res.setHeader('access-control-allow-origin', '*')
+    res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS')
+    res.setHeader('access-control-allow-headers', 'authorization, content-type')
+    void routeHttp(req, res)
+  })
+
+  async function routeHttp(req: Parameters<typeof handleApi>[0], res: Parameters<typeof handleApi>[1]): Promise<void> {
     if (req.url === '/health') {
-      res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ ok: true }))
+      sendJson(res, 200, { ok: true })
       return
     }
+    if (await handleApi(req, res, { verifier: options.verifier, store: options.store })) return
     res.writeHead(404)
     res.end()
-  })
+  }
+
+  async function linkRoomGroup(room: Room, groupId: string, idToken: string): Promise<void> {
+    if (!options.verifier || !options.store) return
+    const identity = await options.verifier.verify(idToken)
+    if (!identity) return
+    const group = await options.store.getGroup(groupId)
+    if (!group || !group.memberIds.includes(identity.userId)) return
+    rooms.linkGroup(room, groupId)
+  }
 
   const wss = new WebSocketServer({ server: httpServer })
 
@@ -61,6 +82,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
         }
         session = rooms.join(msg.room, ws, msg.name.slice(0, 24))
         ws.send(encodeMessage({ t: 'welcome', playerId: session.playerId, room: session.room.code }))
+        if (msg.groupId && msg.idToken) void linkRoomGroup(session.room, msg.groupId, msg.idToken)
         return
       }
       if (!session) return

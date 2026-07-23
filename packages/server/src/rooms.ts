@@ -3,6 +3,8 @@ import type { GameState, Inputs, Rng } from '@bullet/core'
 import { addPlayer, createGameState, createRng, pickGear, removePlayer, startRun, step, TICK_MS } from '@bullet/core'
 import type { ServerMessage } from '@bullet/protocol'
 import { encodeMessage } from '@bullet/protocol'
+import type { GroupStore } from './groups/store.js'
+import { buildRunRecord } from './groups/runRecord.js'
 
 export interface Room {
   code: string
@@ -11,6 +13,8 @@ export interface Room {
   inputs: Inputs
   rng: Rng
   timer: ReturnType<typeof setInterval> | undefined
+  groupId: string | undefined
+  runRecorded: boolean
 }
 
 export class RoomManager {
@@ -19,7 +23,8 @@ export class RoomManager {
 
   constructor(
     private readonly seed: number,
-    private readonly now: () => number
+    private readonly now: () => number,
+    private readonly store?: GroupStore
   ) {}
 
   join(code: string, ws: WebSocket, name: string): { room: Room; playerId: string } {
@@ -58,6 +63,10 @@ export class RoomManager {
     pickGear(room.state, playerId, gearId)
   }
 
+  linkGroup(room: Room, groupId: string): void {
+    room.groupId ??= groupId
+  }
+
   backToLobby(room: Room): void {
     if (room.state.phase === 'runOver') room.state.phase = 'lobby'
   }
@@ -88,7 +97,9 @@ export class RoomManager {
       sockets: new Map(),
       inputs: {},
       rng: createRng(this.seed + this.rooms.size),
-      timer: undefined
+      timer: undefined,
+      groupId: undefined,
+      runRecorded: false
     }
     this.rooms.set(normalized, room)
     return room
@@ -98,8 +109,19 @@ export class RoomManager {
     if (room.timer) return
     room.timer = setInterval(() => {
       step(room.state, room.inputs, room.rng)
+      this.recordFinishedRun(room)
       this.broadcast(room, { t: 'snapshot', serverTime: this.now(), state: room.state })
     }, TICK_MS)
+  }
+
+  private recordFinishedRun(room: Room): void {
+    if (room.state.phase !== 'runOver') {
+      room.runRecorded = false
+      return
+    }
+    if (room.runRecorded || !room.groupId || !this.store) return
+    room.runRecorded = true
+    void this.store.appendRun(room.groupId, buildRunRecord(room.state, this.now()))
   }
 
   private broadcastRoster(room: Room): void {

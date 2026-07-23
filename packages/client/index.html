@@ -39,6 +39,25 @@
         <button id="join-button" class="button button-primary">Join with webcam</button>
         <p id="lobby-error" class="error-line"></p>
         <p id="cam-note" class="cam-note"></p>
+        <div id="auth-panel" class="auth-panel" hidden>
+          <div id="gsi-button" class="gsi-button"></div>
+          <div id="group-panel" hidden>
+            <p id="group-greeting" class="room-line"></p>
+            <label class="field">
+              <span>Play for group</span>
+              <select id="group-select"></select>
+            </label>
+            <div class="group-actions">
+              <input id="group-name-input" maxlength="40" placeholder="New group name" />
+              <button id="group-create-button" class="button">Create</button>
+            </div>
+            <div class="group-actions">
+              <button id="invite-button" class="button">Copy invite link</button>
+              <button id="history-button" class="button">Run history</button>
+            </div>
+            <p id="group-note" class="cam-note"></p>
+          </div>
+        </div>
         <div id="start-panel" hidden>
           <p class="room-line">Room <strong id="room-label"></strong> — share the code with friends</p>
           <ul id="roster-list" class="roster"></ul>
@@ -62,6 +81,14 @@
         <div id="stats-charts" class="charts-grid"></div>
         <div id="stats-table-host" class="table-host"></div>
         <button id="play-again-button" class="button button-primary">Back to lobby</button>
+      </div>
+    </section>
+
+    <section id="history" class="overlay" hidden>
+      <div class="panel stats-panel">
+        <h2 class="panel-title" id="history-title">Run history</h2>
+        <div id="history-table-host" class="table-host"></div>
+        <button id="history-close-button" class="button button-primary">Close</button>
       </div>
     </section>
 

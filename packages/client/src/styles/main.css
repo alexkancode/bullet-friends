@@ -166,6 +166,50 @@ body {
   padding: 4px 0;
 }
 
+.auth-panel {
+  margin-top: 18px;
+  border-top: 1px solid var(--border-hairline);
+  padding-top: 16px;
+}
+
+.gsi-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.group-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.group-actions input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: var(--ink-primary);
+  background: var(--surface-page);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+}
+
+.group-actions .button {
+  padding: 8px 14px;
+}
+
+#group-select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: var(--ink-primary);
+  background: var(--surface-page);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+}
+
 .hud {
   position: fixed;
   inset: 0;
