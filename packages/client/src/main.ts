@@ -44,6 +44,7 @@ const ui = {
   shopCards: el('shop-cards'),
   shopWaiting: el('shop-waiting'),
   stats: el('stats'),
+  countdownBanner: el('countdown-banner'),
   statsLegend: el('stats-legend'),
   statsCharts: el('stats-charts'),
   statsTable: el('stats-table-host'),
@@ -96,6 +97,10 @@ function syncScreens(state: GameState): void {
     setOverlay(ui.lobby)
   } else {
     setOverlay(undefined)
+  }
+  ui.countdownBanner.hidden = phase !== 'countdown'
+  if (phase === 'countdown') {
+    ui.countdownBanner.textContent = `Wave ${state.wave + 1} in ${Math.ceil(state.countdownMsLeft / 1000)}`
   }
   shownPhase = phase
 }

@@ -5,6 +5,7 @@ import { applyInputs } from './movement.js'
 import { advanceProjectiles, fireWeapons, moveEnemies, resolveContactDamage, resolveProjectileHits } from './combat.js'
 import { collectOrbs, awardXp, refreshStats, computeStats } from './progression.js'
 import { advanceWave, beginWave } from './waves.js'
+import { COUNTDOWN_MS, TICK_MS } from './constants.js'
 import { createWaveStats } from './stats.js'
 import { gearById } from './gear.js'
 
@@ -26,6 +27,12 @@ export function startRun(state: GameState): void {
 
 export function step(state: GameState, inputs: Inputs, rng: Rng): void {
   state.tick += 1
+  if (state.phase === 'countdown') {
+    applyInputs(state, inputs)
+    state.countdownMsLeft -= TICK_MS
+    if (state.countdownMsLeft <= 0) beginWave(state, state.wave + 1)
+    return
+  }
   if (state.phase !== 'fighting') return
   applyInputs(state, inputs)
   fireWeapons(state)
@@ -50,7 +57,10 @@ export function pickGear(state: GameState, playerId: string, gearId: string): vo
   player.gear.push(gearId)
   refreshStats(player)
   delete state.pendingOffers[playerId]
-  if (Object.keys(state.pendingOffers).length === 0) beginWave(state, state.wave + 1)
+  if (Object.keys(state.pendingOffers).length === 0) {
+    state.phase = 'countdown'
+    state.countdownMsLeft = COUNTDOWN_MS
+  }
 }
 
 function endRun(state: GameState): void {

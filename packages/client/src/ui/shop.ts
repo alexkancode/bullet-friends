@@ -40,6 +40,7 @@ export function renderShop(
     return
   }
   waiting.hidden = true
+  const cards: HTMLButtonElement[] = []
   for (const gearId of offer) {
     const item = gearById(gearId)
     if (!item) continue
@@ -57,6 +58,9 @@ export function renderShop(
     mods.textContent = item.modifiers.map(describeModifier).join(' · ')
     card.append(img, title, mods)
     card.addEventListener('click', () => onPick(gearId))
+    card.disabled = true
+    cards.push(card)
     container.append(card)
   }
+  setTimeout(() => cards.forEach(card => (card.disabled = false)), 350)
 }

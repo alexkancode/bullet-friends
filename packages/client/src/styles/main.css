@@ -20,6 +20,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--surface-page);
@@ -252,9 +256,27 @@ body {
   transition: transform 120ms ease, border-color 120ms ease;
 }
 
-.gear-card:hover {
+.gear-card:hover:enabled {
   transform: translateY(-3px);
   border-color: var(--accent);
+}
+
+.gear-card:disabled {
+  cursor: default;
+}
+
+.countdown-banner {
+  position: fixed;
+  top: 18%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink-primary);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
 }
 
 .gear-card-art {

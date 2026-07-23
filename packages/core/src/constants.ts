@@ -5,3 +5,4 @@ export const PROJECTILE_RADIUS = 8
 export const PROJECTILE_SPEED = 500
 export const PROJECTILE_TTL_MS = 1600
 export const ORB_RADIUS = 10
+export const COUNTDOWN_MS = 3000

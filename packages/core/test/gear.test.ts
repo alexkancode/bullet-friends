@@ -39,8 +39,7 @@ describe('gear', () => {
     pickGear(state, 'p1', 'top-hat')
     expect(p.gear).toContain('top-hat')
     expect(p.stats.maxHp).toBeGreaterThan(BASE_STATS.maxHp)
-    expect(state.phase).toBe('fighting')
-    expect(state.wave).toBe(2)
+    expect(state.phase).toBe('countdown')
   })
 
   it('rejects picking gear that was not offered', () => {

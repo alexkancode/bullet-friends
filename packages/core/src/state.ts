@@ -56,7 +56,7 @@ export interface OrbState {
   xp: number
 }
 
-export type Phase = 'lobby' | 'fighting' | 'shopping' | 'runOver'
+export type Phase = 'lobby' | 'fighting' | 'shopping' | 'countdown' | 'runOver'
 
 export interface PlayerInput {
   move: Vec
@@ -69,6 +69,7 @@ export interface GameState {
   phase: Phase
   wave: number
   waveMsLeft: number
+  countdownMsLeft: number
   spawnCooldownMs: number
   players: PlayerState[]
   enemies: EnemyState[]
@@ -84,6 +85,7 @@ export function createGameState(): GameState {
     phase: 'lobby',
     wave: 0,
     waveMsLeft: 0,
+    countdownMsLeft: 0,
     spawnCooldownMs: 0,
     players: [],
     enemies: [],
