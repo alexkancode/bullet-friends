@@ -9,6 +9,8 @@ const BAR_GAP = 2
 const BAR_END_RADIUS = 4
 const TAKEN_BAR_COLOR = '#898781'
 
+type ScaleKind = 'point' | 'band'
+
 interface Frame {
   svg: SVGSVGElement
   plotWidth: number
@@ -49,7 +51,7 @@ function buildKillsBars(players: PlayerState[]): HTMLElement {
   const series = buildMetricSeries(players, 'kills')
   const waves = Math.max(1, ...series.map(s => s.values.length))
   const maxValue = Math.max(1, ...series.flatMap(s => s.values)) * 1.1
-  const { figure, frame } = chartFigure('Kills per wave', waves, maxValue)
+  const { figure, frame } = chartFigure('Kills per wave', waves, maxValue, 'band')
 
   const groupWidth = frame.plotWidth / waves
   const barWidth = Math.min(22, Math.max(4, (groupWidth - 8) / Math.max(1, series.length) - BAR_GAP))
@@ -87,13 +89,13 @@ function buildDamageChart(players: PlayerState[]): HTMLElement {
   svg.setAttribute('role', 'img')
   svg.setAttribute('aria-label', 'Damage dealt versus damage taken per player')
 
-  const left = 70
-  const plotWidth = CHART.width - left - 46
+  const left = 92
+  const plotWidth = CHART.width - left - 52
   const maxValue = Math.max(1, ...pairs.flatMap(p => [p.dealt, p.taken]))
 
   pairs.forEach((pair, index) => {
     const rowTop = 12 + index * rowHeight
-    const name = svgText(pair.name, left - 8, rowTop + 15, 'chart-end-label', 'end')
+    const name = svgText(truncate(pair.name, 12), left - 8, rowTop + 15, 'chart-end-label', 'end')
     svg.append(name)
     appendHorizontalBar(svg, left, rowTop, plotWidth, pair.dealt, maxValue, playerColor(pair.colorIndex), index === 0 ? 'dealt' : undefined)
     appendHorizontalBar(svg, left, rowTop + 15, plotWidth, pair.taken, maxValue, TAKEN_BAR_COLOR, index === 0 ? 'taken' : undefined)
@@ -124,7 +126,7 @@ function buildXpLine(players: PlayerState[]): HTMLElement {
   const series = buildMetricSeries(players, 'xpGained').map(s => ({ ...s, values: cumulative(s.values) }))
   const waves = Math.max(1, ...series.map(s => s.values.length))
   const maxValue = Math.max(1, ...series.flatMap(s => s.values)) * 1.1
-  const { figure, frame } = chartFigure('Total XP', waves, maxValue)
+  const { figure, frame } = chartFigure('Total XP', waves, maxValue, 'point')
 
   for (const s of series) {
     const color = playerColor(s.colorIndex)
@@ -153,7 +155,7 @@ function buildXpLine(players: PlayerState[]): HTMLElement {
   return figure
 }
 
-function chartFigure(label: string, waves: number, maxValue: number): { figure: HTMLElement; frame: Frame } {
+function chartFigure(label: string, waves: number, maxValue: number, scale: ScaleKind): { figure: HTMLElement; frame: Frame } {
   const figure = document.createElement('figure')
   figure.className = 'chart'
   const caption = document.createElement('figcaption')
@@ -173,7 +175,10 @@ function chartFigure(label: string, waves: number, maxValue: number): { figure: 
     plotWidth,
     plotHeight,
     yAt: value => CHART.top + plotHeight - (value / maxValue) * plotHeight,
-    xAt: index => CHART.left + (waves === 1 ? plotWidth / 2 : (index / (waves - 1)) * plotWidth)
+    xAt: index =>
+      scale === 'band'
+        ? CHART.left + ((index + 0.5) / waves) * plotWidth
+        : CHART.left + (waves === 1 ? plotWidth / 2 : (index / (waves - 1)) * plotWidth)
   }
 
   for (let g = 0; g <= 2; g++) {
@@ -264,6 +269,10 @@ function renderTotalsTable(host: HTMLElement, players: PlayerState[]): void {
     }
   })
   host.append(table)
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1)}\u2026` : text
 }
 
 function formatValue(value: number): string {
