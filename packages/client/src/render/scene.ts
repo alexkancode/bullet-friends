@@ -3,6 +3,7 @@ import { gearById, ARENA, PLAYER_RADIUS, PROJECTILE_RADIUS, ORB_RADIUS } from '@
 import type { SpriteStore } from './sprites.js'
 import type { CamFeeds } from '../camera/feeds.js'
 import { playerColor, GAME, INK, SURFACE } from './palette.js'
+import { placeGear } from './gearLayout.js'
 
 const ENEMY_ART: Record<EnemyState['kind'], string> = {
   blob: 'art/blob.svg',
@@ -10,11 +11,6 @@ const ENEMY_ART: Record<EnemyState['kind'], string> = {
   brute: 'art/brute.svg'
 }
 
-const GEAR_ANCHORS = {
-  hat: { offsetY: -1.02, width: 1.5 },
-  eyes: { offsetY: -0.18, width: 1.25 },
-  mouth: { offsetY: 0.42, width: 0.9 }
-}
 
 export interface SceneDeps {
   canvas: HTMLCanvasElement
@@ -157,10 +153,8 @@ function drawGear(ctx: CanvasRenderingContext2D, sprites: SpriteStore, gearId: s
   if (!item) return
   const sprite = sprites.ready(item.art)
   if (!sprite) return
-  const anchor = GEAR_ANCHORS[item.slot]
-  const width = r * 2 * anchor.width
-  const height = width * (sprite.naturalHeight / sprite.naturalWidth)
-  ctx.drawImage(sprite, x - width / 2, y + r * anchor.offsetY - height / 2, width, height)
+  const { width, height, centerYOffset } = placeGear(item.slot, r, sprite.naturalHeight / sprite.naturalWidth)
+  ctx.drawImage(sprite, x - width / 2, y + centerYOffset - height / 2, width, height)
 }
 
 function drawBar(ctx: CanvasRenderingContext2D, cx: number, top: number, width: number, height: number, ratio: number, color: string): void {

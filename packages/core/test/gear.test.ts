@@ -5,9 +5,14 @@ describe('gear', () => {
   it('has a catalog where every item renders on a bubble anchor', () => {
     expect(GEAR_CATALOG.length).toBeGreaterThanOrEqual(6)
     for (const item of GEAR_CATALOG) {
-      expect(['hat', 'eyes', 'mouth']).toContain(item.slot)
+      expect(['hat', 'eyes', 'nose', 'mouth']).toContain(item.slot)
       expect(item.art.length).toBeGreaterThan(0)
     }
+  })
+
+  it('places the mustache on the nose and the pipe on the mouth', () => {
+    expect(GEAR_CATALOG.find(g => g.id === 'mustache')?.slot).toBe('nose')
+    expect(GEAR_CATALOG.find(g => g.id === 'pipe')?.slot).toBe('mouth')
   })
 
   it('rolls three distinct offers excluding owned gear', () => {
