@@ -1,6 +1,7 @@
 import { createPrivateKey, sign } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import type { TokenIdentity } from '../auth/verifier.js'
-import type { Group, GroupStore, RunRecord } from './store.js'
+import type { Group, GroupStore, RunRecord, UserProfile } from './store.js'
 import { base64UrlEncode } from '../auth/jwt.js'
 import { fromFirestoreFields, toFirestoreFields } from './firestoreValues.js'
 import type { FirestoreValue } from './firestoreValues.js'
@@ -28,8 +29,42 @@ export class FirestoreGroupStore implements GroupStore {
   ) {}
 
   async upsertUser(user: TokenIdentity): Promise<void> {
-    await this.call('PATCH', `/users/${user.userId}`, {
+    await this.call('PATCH', `/users/${user.userId}?updateMask.fieldPaths=name&updateMask.fieldPaths=email`, {
       fields: toFirestoreFields({ name: user.name, email: user.email })
+    })
+  }
+
+  async getProfile(userId: string): Promise<UserProfile | undefined> {
+    const doc = (await this.call('GET', `/users/${userId}`)) as FirestoreDocument | undefined
+    if (!doc?.fields) return undefined
+    return { userId, ...(fromFirestoreFields(doc.fields) as Omit<UserProfile, 'userId'>) }
+  }
+
+  async getUserByEmail(email: string): Promise<UserProfile | undefined> {
+    const results = (await this.call('POST', ':runQuery', {
+      structuredQuery: {
+        from: [{ collectionId: 'users' }],
+        where: { fieldFilter: { field: { fieldPath: 'email' }, op: 'EQUAL', value: { stringValue: email } } },
+        limit: 1
+      }
+    })) as { document?: FirestoreDocument }[]
+    const doc = results.find(r => r.document?.fields)?.document
+    if (!doc?.fields) return undefined
+    return { userId: idOf(doc.name), ...(fromFirestoreFields(doc.fields) as Omit<UserProfile, 'userId'>) }
+  }
+
+  async createEmailUser(name: string, email: string, passwordHash: string): Promise<UserProfile | undefined> {
+    if (await this.getUserByEmail(email)) return undefined
+    const userId = `e-${randomUUID()}`
+    await this.call('PATCH', `/users/${userId}`, {
+      fields: toFirestoreFields({ name, email, passwordHash })
+    })
+    return { userId, name, email, passwordHash }
+  }
+
+  async setCamConsent(userId: string, allowed: boolean): Promise<void> {
+    await this.call('PATCH', `/users/${userId}?updateMask.fieldPaths=camConsent`, {
+      fields: toFirestoreFields({ camConsent: allowed })
     })
   }
 

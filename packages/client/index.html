@@ -28,40 +28,69 @@
       <div class="panel lobby-panel">
         <h1 class="game-title">Bullet Friends</h1>
         <p class="tagline">Your face is the potato.</p>
-        <label class="field">
-          <span>Name</span>
-          <input id="name-input" maxlength="24" placeholder="Spud" />
-        </label>
-        <label class="field">
-          <span>Room code (blank for a new room)</span>
-          <input id="room-input" maxlength="8" placeholder="GLHF" />
-        </label>
-        <button id="join-button" class="button button-primary">Join with webcam</button>
-        <p id="lobby-error" class="error-line"></p>
-        <p id="cam-note" class="cam-note"></p>
-        <div id="auth-panel" class="auth-panel" hidden>
-          <div id="gsi-button" class="gsi-button"></div>
-          <div id="group-panel" hidden>
-            <p id="group-greeting" class="room-line"></p>
-            <label class="field">
-              <span>Play for group</span>
-              <select id="group-select"></select>
-            </label>
-            <div class="group-actions">
-              <input id="group-name-input" maxlength="40" placeholder="New group name" />
-              <button id="group-create-button" class="button">Create</button>
-            </div>
-            <div class="group-actions">
-              <button id="invite-button" class="button">Copy invite link</button>
-              <button id="history-button" class="button">Run history</button>
-            </div>
-            <p id="group-note" class="cam-note"></p>
+
+        <div id="step-auth" hidden>
+          <div class="tab-row">
+            <button id="tab-signin" class="tab tab-active" type="button">Sign in</button>
+            <button id="tab-signup" class="tab" type="button">Sign up</button>
           </div>
+          <form id="signin-form">
+            <label class="field"><span>Email</span><input id="signin-email" type="email" autocomplete="email" /></label>
+            <label class="field"><span>Password</span><input id="signin-password" type="password" autocomplete="current-password" /></label>
+            <button class="button button-primary" type="submit">Sign in</button>
+          </form>
+          <form id="signup-form" hidden>
+            <label class="field"><span>Display name</span><input id="signup-name" maxlength="24" /></label>
+            <label class="field"><span>Email</span><input id="signup-email" type="email" autocomplete="email" /></label>
+            <label class="field"><span>Password (8+ characters)</span><input id="signup-password" type="password" autocomplete="new-password" /></label>
+            <label class="field"><span>Confirm password</span><input id="signup-confirm" type="password" autocomplete="new-password" /></label>
+            <button class="button button-primary" type="submit">Create account</button>
+          </form>
+          <p id="auth-error" class="error-line"></p>
+          <div class="auth-divider"><span>or</span></div>
+          <div id="gsi-button" class="gsi-button"></div>
         </div>
-        <div id="start-panel" hidden>
-          <p class="room-line">Room <strong id="room-label"></strong> — share the code with friends</p>
+
+        <div id="step-consent" hidden>
+          <h2 class="panel-title">Play with your webcam?</h2>
+          <p class="consent-blurb">
+            Your live face becomes your character's body, which is most of the fun.
+            Small snapshots go only to the friends in your game room, are never
+            recorded, and never touch a server disk. Say no and you'll play as a
+            colored bubble with your initial instead.
+          </p>
+          <button id="consent-yes" class="button button-primary" type="button">Use my webcam</button>
+          <button id="consent-no" class="button button-wide" type="button">No thanks, use my initial</button>
+          <p id="consent-error" class="error-line"></p>
+        </div>
+
+        <div id="step-group" hidden>
+          <h2 class="panel-title">Pick your crew</h2>
+          <ul id="my-groups" class="group-list"></ul>
+          <div class="group-actions">
+            <input id="group-name-input" maxlength="40" placeholder="New group name" />
+            <button id="group-create-button" class="button" type="button">Create</button>
+          </div>
+          <p id="group-error" class="error-line"></p>
+        </div>
+
+        <div id="step-ready" hidden>
+          <h2 class="panel-title" id="ready-title"></h2>
+          <p class="room-line">Group room <strong id="room-label"></strong></p>
+          <button id="play-button" class="button button-primary" type="button">Play</button>
+          <div class="group-actions">
+            <button id="invite-button" class="button" type="button">Copy invite link</button>
+            <button id="history-button" class="button" type="button">Run history</button>
+            <button id="switch-group-button" class="button" type="button">Switch group</button>
+          </div>
+          <p id="group-note" class="cam-note"></p>
+        </div>
+
+        <div id="step-staging" hidden>
+          <p class="room-line">Room <strong id="staging-room"></strong> — groupmates land here automatically</p>
           <ul id="roster-list" class="roster"></ul>
-          <button id="start-button" class="button button-primary">Start run</button>
+          <button id="start-button" class="button button-primary" type="button">Start run</button>
+          <p id="cam-note" class="cam-note"></p>
         </div>
       </div>
     </section>
@@ -80,7 +109,7 @@
         <div id="stats-legend" class="legend"></div>
         <div id="stats-charts" class="charts-grid"></div>
         <div id="stats-table-host" class="table-host"></div>
-        <button id="play-again-button" class="button button-primary">Back to lobby</button>
+        <button id="play-again-button" class="button button-primary" type="button">Back to lobby</button>
       </div>
     </section>
 
@@ -88,7 +117,7 @@
       <div class="panel stats-panel">
         <h2 class="panel-title" id="history-title">Run history</h2>
         <div id="history-table-host" class="table-host"></div>
-        <button id="history-close-button" class="button button-primary">Close</button>
+        <button id="history-close-button" class="button button-primary" type="button">Close</button>
       </div>
     </section>
 

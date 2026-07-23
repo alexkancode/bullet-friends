@@ -1,4 +1,5 @@
 import type { GameState, Phase } from '@bullet/core'
+import { roomCodeForGroup } from '@bullet/core'
 import { PROTOCOL_VERSION } from '@bullet/protocol'
 import type { GameSocket } from './net/socket.js'
 import { connectSocket } from './net/socket.js'
@@ -13,9 +14,11 @@ import { updateHud } from './ui/hud.js'
 import { renderShop } from './ui/shop.js'
 import { renderStatsCharts } from './ui/statsCharts.js'
 import { renderHistoryTable } from './ui/historyTable.js'
+import { nextStep } from './ui/onboarding.js'
+import type { OnboardProfile } from './ui/onboarding.js'
 import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
 import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
-import { apiBaseFromWsUrl, createGroupApi } from './net/api.js'
+import { apiBaseFromWsUrl, createGroupApi, ApiError } from './net/api.js'
 import type { ApiGroup } from './net/api.js'
 
 const INPUT_SEND_MS = 50
@@ -35,40 +38,56 @@ function el<T extends HTMLElement>(id: string): T {
 
 const ui = {
   lobby: el('lobby'),
-  lobbyError: el('lobby-error'),
-  nameInput: el<HTMLInputElement>('name-input'),
-  roomInput: el<HTMLInputElement>('room-input'),
-  joinButton: el<HTMLButtonElement>('join-button'),
-  startPanel: el('start-panel'),
+  hud: el('hud'),
+  stepAuth: el('step-auth'),
+  tabSignin: el<HTMLButtonElement>('tab-signin'),
+  tabSignup: el<HTMLButtonElement>('tab-signup'),
+  signinForm: el<HTMLFormElement>('signin-form'),
+  signinEmail: el<HTMLInputElement>('signin-email'),
+  signinPassword: el<HTMLInputElement>('signin-password'),
+  signupForm: el<HTMLFormElement>('signup-form'),
+  signupName: el<HTMLInputElement>('signup-name'),
+  signupEmail: el<HTMLInputElement>('signup-email'),
+  signupPassword: el<HTMLInputElement>('signup-password'),
+  signupConfirm: el<HTMLInputElement>('signup-confirm'),
+  authError: el('auth-error'),
+  gsiButton: el('gsi-button'),
+  stepConsent: el('step-consent'),
+  consentYes: el<HTMLButtonElement>('consent-yes'),
+  consentNo: el<HTMLButtonElement>('consent-no'),
+  consentError: el('consent-error'),
+  stepGroup: el('step-group'),
+  myGroups: el('my-groups'),
+  groupNameInput: el<HTMLInputElement>('group-name-input'),
+  groupCreateButton: el<HTMLButtonElement>('group-create-button'),
+  groupError: el('group-error'),
+  stepReady: el('step-ready'),
+  readyTitle: el('ready-title'),
   roomLabel: el('room-label'),
+  playButton: el<HTMLButtonElement>('play-button'),
+  inviteButton: el<HTMLButtonElement>('invite-button'),
+  historyButton: el<HTMLButtonElement>('history-button'),
+  switchGroupButton: el<HTMLButtonElement>('switch-group-button'),
+  groupNote: el('group-note'),
+  stepStaging: el('step-staging'),
+  stagingRoom: el('staging-room'),
   rosterList: el('roster-list'),
   startButton: el<HTMLButtonElement>('start-button'),
   camNote: el('cam-note'),
-  hud: el('hud'),
   shop: el('shop'),
   shopCards: el('shop-cards'),
   shopWaiting: el('shop-waiting'),
   stats: el('stats'),
-  countdownBanner: el('countdown-banner'),
   statsLegend: el('stats-legend'),
   statsCharts: el('stats-charts'),
   statsTable: el('stats-table-host'),
   playAgainButton: el<HTMLButtonElement>('play-again-button'),
-  canvas: el<HTMLCanvasElement>('game'),
-  authPanel: el('auth-panel'),
-  gsiButton: el('gsi-button'),
-  groupPanel: el('group-panel'),
-  groupGreeting: el('group-greeting'),
-  groupSelect: el<HTMLSelectElement>('group-select'),
-  groupNameInput: el<HTMLInputElement>('group-name-input'),
-  groupCreateButton: el<HTMLButtonElement>('group-create-button'),
-  inviteButton: el<HTMLButtonElement>('invite-button'),
-  historyButton: el<HTMLButtonElement>('history-button'),
-  groupNote: el('group-note'),
+  countdownBanner: el('countdown-banner'),
   history: el('history'),
   historyTitle: el('history-title'),
   historyTableHost: el('history-table-host'),
-  historyCloseButton: el<HTMLButtonElement>('history-close-button')
+  historyCloseButton: el<HTMLButtonElement>('history-close-button'),
+  canvas: el<HTMLCanvasElement>('game')
 }
 
 const hudElements = {
@@ -87,10 +106,274 @@ const selfVideo = document.createElement('video')
 selfVideo.muted = true
 selfVideo.playsInline = true
 
+const clientIdEnv = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+const auth = clientIdEnv ? createGoogleAuthProvider(clientIdEnv) : nullAuthProvider
+let sessionToken = browserPlatform.loadSession()
+const groupApi = createGroupApi(apiBaseFromWsUrl(serverUrl()), () => sessionToken)
+
+let profile: OnboardProfile | undefined
+let myGroups: ApiGroup[] = []
+let activeGroup: ApiGroup | undefined
+let joined = false
 let socket: GameSocket | undefined
 let selfId: string | undefined
+let cameraStarted = false
 let shownPhase: Phase | 'none' = 'none'
 let renderedOfferKey = ''
+
+function renderFlow(): void {
+  const step = joined ? 'staging' : nextStep(profile, activeGroup !== undefined)
+  ui.stepAuth.hidden = step !== 'auth'
+  ui.stepConsent.hidden = step !== 'consent'
+  ui.stepGroup.hidden = step !== 'group'
+  ui.stepReady.hidden = step !== 'ready'
+  ui.stepStaging.hidden = step !== 'staging'
+  if (step === 'group') renderGroupList()
+  if (step === 'ready' && activeGroup) {
+    ui.readyTitle.textContent = activeGroup.name
+    ui.roomLabel.textContent = roomCodeForGroup(activeGroup.id)
+  }
+  if (step === 'staging' && activeGroup) {
+    ui.stagingRoom.textContent = roomCodeForGroup(activeGroup.id)
+  }
+}
+
+function renderGroupList(): void {
+  ui.myGroups.replaceChildren()
+  for (const group of myGroups) {
+    const item = document.createElement('li')
+    const pick = document.createElement('button')
+    pick.className = 'group-pick'
+    pick.type = 'button'
+    pick.textContent = `${group.name} (${group.memberIds.length} member${group.memberIds.length === 1 ? '' : 's'})`
+    pick.addEventListener('click', () => {
+      activeGroup = group
+      renderFlow()
+    })
+    item.append(pick)
+    ui.myGroups.append(item)
+  }
+  if (myGroups.length === 0) {
+    const empty = document.createElement('li')
+    empty.className = 'cam-note'
+    empty.textContent = 'No groups yet — create one below or open a friend’s invite link.'
+    ui.myGroups.append(empty)
+  }
+}
+
+async function adoptSession(token: string, newProfile: OnboardProfile): Promise<void> {
+  sessionToken = token
+  browserPlatform.saveSession(token)
+  profile = newProfile
+  await afterAuth()
+}
+
+async function afterAuth(): Promise<void> {
+  const invite = inviteCodeFromSearch(location.search)
+  if (invite) {
+    const joinedGroup = await groupApi.acceptInvite(invite)
+    if (joinedGroup) {
+      activeGroup = joinedGroup
+      ui.groupNote.textContent = `Joined group ${joinedGroup.name}`
+    }
+    history.replaceState(null, '', location.pathname)
+  }
+  await refreshGroups()
+  renderFlow()
+}
+
+async function refreshGroups(): Promise<void> {
+  const me = await groupApi.me()
+  profile = me.profile
+  myGroups = me.groups
+  if (activeGroup) activeGroup = myGroups.find(g => g.id === activeGroup?.id) ?? activeGroup
+  if (myGroups.length === 1 && !activeGroup) activeGroup = myGroups[0]
+}
+
+async function restoreSession(): Promise<void> {
+  if (!sessionToken) {
+    renderFlow()
+    return
+  }
+  try {
+    await afterAuth()
+  } catch {
+    sessionToken = undefined
+    browserPlatform.clearSession()
+    renderFlow()
+  }
+}
+
+function authFail(error: unknown): void {
+  ui.authError.textContent = error instanceof ApiError ? error.message : 'Could not reach the server'
+}
+
+ui.tabSignin.addEventListener('click', () => setAuthTab('signin'))
+ui.tabSignup.addEventListener('click', () => setAuthTab('signup'))
+
+function setAuthTab(tab: 'signin' | 'signup'): void {
+  ui.signinForm.hidden = tab !== 'signin'
+  ui.signupForm.hidden = tab !== 'signup'
+  ui.tabSignin.classList.toggle('tab-active', tab === 'signin')
+  ui.tabSignup.classList.toggle('tab-active', tab === 'signup')
+  ui.authError.textContent = ''
+}
+
+ui.signinForm.addEventListener('submit', event => {
+  event.preventDefault()
+  void groupApi
+    .login(ui.signinEmail.value.trim(), ui.signinPassword.value)
+    .then(result => adoptSession(result.token, result.profile))
+    .catch(authFail)
+})
+
+ui.signupForm.addEventListener('submit', event => {
+  event.preventDefault()
+  if (ui.signupPassword.value !== ui.signupConfirm.value) {
+    ui.authError.textContent = 'Passwords do not match'
+    return
+  }
+  void groupApi
+    .signup(ui.signupName.value.trim(), ui.signupEmail.value.trim(), ui.signupPassword.value)
+    .then(result => adoptSession(result.token, result.profile))
+    .catch(authFail)
+})
+
+if (auth.enabled) {
+  auth.renderButton(ui.gsiButton, googleToken => {
+    void groupApi
+      .googleExchange(googleToken)
+      .then(result => adoptSession(result.token, result.profile))
+      .catch(authFail)
+  })
+}
+
+function answerConsent(allowed: boolean): void {
+  void groupApi
+    .setCamConsent(allowed)
+    .then(() => {
+      if (profile) profile = { ...profile, camConsent: allowed }
+      renderFlow()
+    })
+    .catch(() => {
+      ui.consentError.textContent = 'Could not save your choice, try again'
+    })
+}
+
+ui.consentYes.addEventListener('click', () => answerConsent(true))
+ui.consentNo.addEventListener('click', () => answerConsent(false))
+
+ui.groupCreateButton.addEventListener('click', () => {
+  const name = ui.groupNameInput.value.trim()
+  if (!name) return
+  void groupApi
+    .createGroup(name)
+    .then(async group => {
+      ui.groupNameInput.value = ''
+      await refreshGroups()
+      activeGroup = myGroups.find(g => g.id === group.id) ?? group
+      renderFlow()
+    })
+    .catch(() => {
+      ui.groupError.textContent = 'Could not create the group'
+    })
+})
+
+ui.switchGroupButton.addEventListener('click', () => {
+  activeGroup = undefined
+  void refreshGroups().then(renderFlow)
+})
+
+ui.inviteButton.addEventListener('click', () => {
+  if (!activeGroup) return
+  void groupApi
+    .createInvite(activeGroup.id)
+    .then(code => {
+      const link = inviteUrl(location.href, code)
+      return navigator.clipboard
+        .writeText(link)
+        .then(() => (ui.groupNote.textContent = 'Invite link copied to clipboard'))
+        .catch(() => (ui.groupNote.textContent = `Invite link: ${link}`))
+    })
+    .catch(() => (ui.groupNote.textContent = 'Could not create an invite'))
+})
+
+ui.historyButton.addEventListener('click', () => {
+  if (!activeGroup) return
+  void groupApi
+    .history(activeGroup.id)
+    .then(runs => {
+      ui.historyTitle.textContent = `Run history — ${activeGroup?.name ?? ''}`
+      renderHistoryTable(ui.historyTableHost, runs)
+      ui.history.hidden = false
+    })
+    .catch(() => (ui.groupNote.textContent = 'Could not load history'))
+})
+
+ui.historyCloseButton.addEventListener('click', () => {
+  ui.history.hidden = true
+})
+
+ui.playButton.addEventListener('click', () => void joinGame())
+ui.startButton.addEventListener('click', () => socket?.send({ t: 'start' }))
+ui.playAgainButton.addEventListener('click', () => socket?.send({ t: 'playAgain' }))
+
+async function joinGame(): Promise<void> {
+  if (!profile || !activeGroup || !sessionToken) return
+  ui.playButton.disabled = true
+  ui.groupNote.textContent = ''
+  try {
+    socket = await connectSocket(serverUrl(), {
+      onMessage: msg => {
+        if (msg.t === 'welcome') {
+          selfId = msg.playerId
+          joined = true
+          renderFlow()
+        }
+        if (msg.t === 'snapshot') buffer.push(performance.now(), msg.state)
+        if (msg.t === 'error') ui.groupNote.textContent = msg.message
+      },
+      onCamFrame: (playerId, jpeg) => void feeds.accept(playerId, jpeg),
+      onClose: () => {
+        joined = false
+        selfId = undefined
+        ui.playButton.disabled = false
+        ui.groupNote.textContent = 'Disconnected from server'
+        renderFlow()
+      }
+    })
+  } catch (error) {
+    ui.playButton.disabled = false
+    ui.groupNote.textContent = error instanceof Error ? error.message : 'Connection failed'
+    return
+  }
+  socket.send({
+    t: 'join',
+    room: roomCodeForGroup(activeGroup.id),
+    name: profile.name,
+    protocolVersion: PROTOCOL_VERSION,
+    groupId: activeGroup.id,
+    idToken: sessionToken
+  })
+  await startCameraIfConsented()
+}
+
+async function startCameraIfConsented(): Promise<void> {
+  if (cameraStarted || profile?.camConsent !== true) {
+    if (profile?.camConsent === false) ui.camNote.textContent = 'Playing without webcam, as you chose'
+    return
+  }
+  const stream = await browserPlatform.getCameraStream()
+  if (!stream) {
+    ui.camNote.textContent = 'Camera unavailable — playing with your initial instead'
+    return
+  }
+  cameraStarted = true
+  ui.camNote.textContent = ''
+  selfVideo.srcObject = stream
+  await selfVideo.play()
+  startFrameCapture(selfVideo, bytes => socket?.sendFrame(bytes))
+}
 
 function setOverlay(overlay: HTMLElement | undefined): void {
   for (const panel of [ui.lobby, ui.shop, ui.stats]) panel.hidden = panel !== overlay
@@ -133,156 +416,13 @@ function renderRoster(state: GameState): void {
   }
 }
 
-async function joinGame(): Promise<void> {
-  const name = ui.nameInput.value.trim() || 'Spud'
-  const room = ui.roomInput.value.trim() || randomRoomCode()
-  browserPlatform.saveName(name)
-  ui.joinButton.disabled = true
-  ui.lobbyError.textContent = ''
-  try {
-    socket = await connectSocket(serverUrl(), {
-      onMessage: msg => {
-        if (msg.t === 'welcome') {
-          selfId = msg.playerId
-          ui.roomLabel.textContent = msg.room
-          ui.startPanel.hidden = false
-        }
-        if (msg.t === 'snapshot') buffer.push(performance.now(), msg.state)
-        if (msg.t === 'error') ui.lobbyError.textContent = msg.message
-      },
-      onCamFrame: (playerId, jpeg) => void feeds.accept(playerId, jpeg),
-      onClose: () => {
-        ui.lobbyError.textContent = 'Disconnected from server'
-        ui.joinButton.disabled = false
-        ui.startPanel.hidden = true
-        selfId = undefined
-      }
-    })
-  } catch (error) {
-    ui.lobbyError.textContent = error instanceof Error ? error.message : 'Connection failed'
-    ui.joinButton.disabled = false
-    return
-  }
-  const idToken = auth.token()
-  const groupId = ui.groupSelect.value
-  socket.send({
-    t: 'join',
-    room,
-    name,
-    protocolVersion: PROTOCOL_VERSION,
-    ...(idToken && groupId ? { groupId, idToken } : {})
-  })
-  await startCamera()
-}
-
-const clientIdEnv = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
-const auth = clientIdEnv ? createGoogleAuthProvider(clientIdEnv) : nullAuthProvider
-const groupApi = createGroupApi(apiBaseFromWsUrl(serverUrl()), auth.token)
-let selectedGroup: ApiGroup | undefined
-
-function note(text: string): void {
-  ui.groupNote.textContent = text
-}
-
-async function refreshGroups(): Promise<void> {
-  const me = await groupApi.me()
-  ui.groupSelect.replaceChildren()
-  for (const group of me.groups) {
-    const option = document.createElement('option')
-    option.value = group.id
-    option.textContent = group.name
-    ui.groupSelect.append(option)
-  }
-  selectedGroup = me.groups.find(g => g.id === ui.groupSelect.value)
-}
-
-async function onSignedIn(name: string): Promise<void> {
-  ui.groupGreeting.textContent = `Signed in as ${name}`
-  ui.groupPanel.hidden = false
-  const invite = inviteCodeFromSearch(location.search)
-  if (invite) {
-    const joined = await groupApi.acceptInvite(invite)
-    note(joined ? `Joined group ${joined.name}` : 'That invite link was already used')
-  }
-  await refreshGroups()
-}
-
-if (auth.enabled) {
-  ui.authPanel.hidden = false
-  auth.renderButton(ui.gsiButton, (_token, profile) => void onSignedIn(profile.name).catch(() => note('Could not load your groups')))
-}
-
-ui.groupSelect.addEventListener('change', () => {
-  selectedGroup = undefined
-  void refreshGroups()
-})
-ui.groupCreateButton.addEventListener('click', () => {
-  const name = ui.groupNameInput.value.trim()
-  if (!name) return
-  void groupApi
-    .createGroup(name)
-    .then(async group => {
-      ui.groupNameInput.value = ''
-      await refreshGroups()
-      ui.groupSelect.value = group.id
-      note(`Created group ${group.name}`)
-    })
-    .catch(() => note('Could not create the group'))
-})
-ui.inviteButton.addEventListener('click', () => {
-  const groupId = ui.groupSelect.value
-  if (!groupId) return
-  void groupApi
-    .createInvite(groupId)
-    .then(code => {
-      const link = inviteUrl(location.href, code)
-      return navigator.clipboard
-        .writeText(link)
-        .then(() => note('Invite link copied to clipboard'))
-        .catch(() => note(`Invite link: ${link}`))
-    })
-    .catch(() => note('Could not create an invite'))
-})
-ui.historyButton.addEventListener('click', () => {
-  const groupId = ui.groupSelect.value
-  if (!groupId) return
-  void groupApi
-    .history(groupId)
-    .then(runs => {
-      ui.historyTitle.textContent = `Run history — ${selectedGroup?.name ?? ui.groupSelect.selectedOptions[0]?.textContent ?? ''}`
-      renderHistoryTable(ui.historyTableHost, runs)
-      ui.history.hidden = false
-    })
-    .catch(() => note('Could not load history'))
-})
-ui.historyCloseButton.addEventListener('click', () => {
-  ui.history.hidden = true
-})
-
-async function startCamera(): Promise<void> {
-  const stream = await browserPlatform.getCameraStream()
-  if (!stream) {
-    ui.camNote.textContent = 'Camera unavailable — playing with an initial instead'
-    return
-  }
-  ui.camNote.textContent = ''
-  selfVideo.srcObject = stream
-  await selfVideo.play()
-  startFrameCapture(selfVideo, bytes => socket?.sendFrame(bytes))
-}
-
-function randomRoomCode(): string {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
-  return Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('')
-}
-
 function resizeCanvas(): void {
   ui.canvas.width = ui.canvas.clientWidth * devicePixelRatio
   ui.canvas.height = ui.canvas.clientHeight * devicePixelRatio
 }
 
 function frame(): void {
-  const state = buffer.sample(performance.now())
+  const state = joined ? buffer.sample(performance.now()) : undefined
   if (state) {
     drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, state, selfId)
     updateHud(hudElements, state, state.players.find(p => p.id === selfId))
@@ -298,12 +438,9 @@ setInterval(() => {
   socket.send({ t: 'input', seq: ++inputSeq, move: keys.current() })
 }, INPUT_SEND_MS)
 
-ui.nameInput.value = browserPlatform.loadName()
-ui.joinButton.addEventListener('click', () => void joinGame())
-ui.startButton.addEventListener('click', () => socket?.send({ t: 'start' }))
-ui.playAgainButton.addEventListener('click', () => socket?.send({ t: 'playAgain' }))
 window.addEventListener('resize', resizeCanvas)
-
 resizeCanvas()
 setOverlay(ui.lobby)
+setAuthTab('signin')
+void restoreSession()
 requestAnimationFrame(frame)

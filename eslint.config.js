@@ -12,7 +12,7 @@ export default tseslint.config(
       'prefer-const': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-dynamic-delete': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_', ignoreRestSiblings: true }]
     }
   },
   {

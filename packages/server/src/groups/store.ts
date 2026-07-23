@@ -1,5 +1,10 @@
 import type { TokenIdentity } from '../auth/verifier.js'
 
+export interface UserProfile extends TokenIdentity {
+  camConsent?: boolean
+  passwordHash?: string
+}
+
 export interface Group {
   id: string
   name: string
@@ -25,6 +30,10 @@ export interface RunRecord {
 
 export interface GroupStore {
   upsertUser(user: TokenIdentity): Promise<void>
+  getProfile(userId: string): Promise<UserProfile | undefined>
+  getUserByEmail(email: string): Promise<UserProfile | undefined>
+  createEmailUser(name: string, email: string, passwordHash: string): Promise<UserProfile | undefined>
+  setCamConsent(userId: string, allowed: boolean): Promise<void>
   createGroup(owner: TokenIdentity, name: string): Promise<Group>
   getGroup(id: string): Promise<Group | undefined>
   getUserGroups(userId: string): Promise<Group[]>

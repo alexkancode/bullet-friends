@@ -7,6 +7,8 @@ import { RoomManager } from './rooms.js'
 import { FrameRelay } from './relay.js'
 import { handleApi, sendJson } from './api.js'
 import type { TokenVerifier } from './auth/verifier.js'
+import type { SessionTokens } from './auth/sessions.js'
+import { CompositeTokenVerifier } from './auth/composite.js'
 import type { GroupStore } from './groups/store.js'
 
 export interface ServerOptions {
@@ -14,6 +16,8 @@ export interface ServerOptions {
   seed?: number
   verifier?: TokenVerifier
   store?: GroupStore
+  sessions?: SessionTokens
+  googleVerifier?: TokenVerifier
 }
 
 export interface RunningServer {
@@ -25,6 +29,8 @@ const CAM_FRAMES_PER_SECOND = 12
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
   const now = () => Date.now()
+  const verifiers = [options.sessions, options.googleVerifier, options.verifier].filter((v): v is TokenVerifier => Boolean(v))
+  const authVerifier = verifiers.length > 0 ? new CompositeTokenVerifier(verifiers) : undefined
   const rooms = new RoomManager(options.seed ?? Date.now(), now, options.store)
   const relay = new FrameRelay(CAM_FRAMES_PER_SECOND, now)
 
@@ -40,14 +46,14 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
       sendJson(res, 200, { ok: true })
       return
     }
-    if (await handleApi(req, res, { verifier: options.verifier, store: options.store })) return
+    if (await handleApi(req, res, { verifier: authVerifier, store: options.store, sessions: options.sessions, googleVerifier: options.googleVerifier })) return
     res.writeHead(404)
     res.end()
   }
 
   async function linkRoomGroup(room: Room, groupId: string, idToken: string): Promise<void> {
-    if (!options.verifier || !options.store) return
-    const identity = await options.verifier.verify(idToken)
+    if (!authVerifier || !options.store) return
+    const identity = await authVerifier.verify(idToken)
     if (!identity) return
     const group = await options.store.getGroup(groupId)
     if (!group || !group.memberIds.includes(identity.userId)) return

@@ -1,3 +1,5 @@
+import type { OnboardProfile } from '../ui/onboarding.js'
+
 export interface ApiGroup {
   id: string
   name: string
@@ -10,12 +12,30 @@ export interface ApiRunRecord {
   players: { name: string; level: number; kills: number; damageDealt: number; damageTaken: number; xpGained: number }[]
 }
 
+export interface AuthResult {
+  token: string
+  profile: OnboardProfile
+}
+
 export interface GroupApi {
-  me(): Promise<{ profile: { name: string }; groups: ApiGroup[] }>
+  signup(name: string, email: string, password: string): Promise<AuthResult>
+  login(email: string, password: string): Promise<AuthResult>
+  googleExchange(idToken: string): Promise<AuthResult>
+  me(): Promise<{ profile: OnboardProfile; groups: ApiGroup[] }>
+  setCamConsent(allowed: boolean): Promise<void>
   createGroup(name: string): Promise<ApiGroup>
   createInvite(groupId: string): Promise<string>
   acceptInvite(code: string): Promise<ApiGroup | undefined>
   history(groupId: string): Promise<ApiRunRecord[]>
+}
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string
+  ) {
+    super(message)
+  }
 }
 
 export function createGroupApi(baseUrl: string, token: () => string | undefined): GroupApi {
@@ -23,16 +43,24 @@ export function createGroupApi(baseUrl: string, token: () => string | undefined)
     const response = await fetch(`${baseUrl}${path}`, {
       method,
       headers: {
-        authorization: `Bearer ${token() ?? ''}`,
+        ...(token() ? { authorization: `Bearer ${token()}` } : {}),
         ...(body ? { 'content-type': 'application/json' } : {})
       },
       ...(body ? { body: JSON.stringify(body) } : {})
     })
-    if (!response.ok) throw new Error(`${method} ${path} failed with ${response.status}`)
-    return response.json() as Promise<T>
+    const json: unknown = await response.json().catch(() => undefined)
+    if (!response.ok) {
+      const message = typeof json === 'object' && json !== null && 'error' in json ? String((json as { error: unknown }).error) : `request failed with ${response.status}`
+      throw new ApiError(response.status, message)
+    }
+    return json as T
   }
   return {
+    signup: (name, email, password) => call('POST', '/api/auth/signup', { name, email, password }),
+    login: (email, password) => call('POST', '/api/auth/login', { email, password }),
+    googleExchange: idToken => call('POST', '/api/auth/google', { idToken }),
     me: () => call('GET', '/api/me'),
+    setCamConsent: allowed => call('POST', '/api/me/cam-consent', { allowed }),
     createGroup: name => call('POST', '/api/groups', { name }),
     createInvite: groupId => call<{ code: string }>('POST', `/api/groups/${groupId}/invites`).then(r => r.code),
     acceptInvite: code => call<ApiGroup>('POST', `/api/invites/${code}/accept`).catch(() => undefined),

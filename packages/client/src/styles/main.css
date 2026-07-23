@@ -166,10 +166,80 @@ body {
   padding: 4px 0;
 }
 
-.auth-panel {
-  margin-top: 18px;
-  border-top: 1px solid var(--border-hairline);
-  padding-top: 16px;
+.tab-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--baseline);
+}
+
+.tab {
+  font: inherit;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-weight: 600;
+}
+
+.tab-active {
+  color: var(--ink-primary);
+  border-bottom-color: var(--accent);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  margin: 16px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--gridline);
+}
+
+.consent-blurb {
+  color: var(--ink-secondary);
+  text-align: left;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.button-wide {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.group-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-pick {
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  color: var(--ink-primary);
+  background: var(--surface-page);
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.group-pick:hover {
+  border-color: var(--accent);
 }
 
 .gsi-button {
@@ -196,18 +266,6 @@ body {
 
 .group-actions .button {
   padding: 8px 14px;
-}
-
-#group-select {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  padding: 8px 10px;
-  font-size: 0.95rem;
-  color: var(--ink-primary);
-  background: var(--surface-page);
-  border: 1px solid var(--baseline);
-  border-radius: 8px;
 }
 
 .hud {

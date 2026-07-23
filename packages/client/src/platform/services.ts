@@ -1,5 +1,6 @@
 export interface PlatformServices {
   getCameraStream(): Promise<MediaStream | undefined>
-  loadName(): string
-  saveName(name: string): void
+  loadSession(): string | undefined
+  saveSession(token: string): void
+  clearSession(): void
 }

@@ -1,6 +1,6 @@
 import type { PlatformServices } from './services.js'
 
-const NAME_KEY = 'bullet-friends.name'
+const SESSION_KEY = 'bullet-friends.session'
 
 export const browserPlatform: PlatformServices = {
   async getCameraStream() {
@@ -13,10 +13,13 @@ export const browserPlatform: PlatformServices = {
       return undefined
     }
   },
-  loadName() {
-    return localStorage.getItem(NAME_KEY) ?? ''
+  loadSession() {
+    return localStorage.getItem(SESSION_KEY) ?? undefined
   },
-  saveName(name: string) {
-    localStorage.setItem(NAME_KEY, name)
+  saveSession(token: string) {
+    localStorage.setItem(SESSION_KEY, token)
+  },
+  clearSession() {
+    localStorage.removeItem(SESSION_KEY)
   }
 }
