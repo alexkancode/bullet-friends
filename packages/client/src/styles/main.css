@@ -37,6 +37,11 @@ body {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  transition: opacity 400ms ease;
+}
+
+#game.canvas-dimmed {
+  opacity: 0.3;
 }
 
 .overlay {

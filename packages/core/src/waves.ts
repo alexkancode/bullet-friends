@@ -7,7 +7,7 @@ import { spawnEnemy } from './state.js'
 import { createWaveStats } from './stats.js'
 import { rollOffers } from './gear.js'
 import { bankRemainingOrbs } from './progression.js'
-import { ARENA, TICK_MS } from './constants.js'
+import { ARENA, COUNTDOWN_MS, TICK_MS } from './constants.js'
 
 export function waveDurationMs(wave: number): number {
   return 20000 + (wave - 1) * 4000
@@ -54,10 +54,14 @@ function endWave(state: GameState, rng: Rng): void {
       player.hp = player.stats.maxHp / 2
     }
   }
+  const rolled: [string, string[]][] = state.players.map(p => [p.id, rollOffers(rng, p.gear)])
+  state.pendingOffers = Object.fromEntries(rolled.filter(([, offers]) => offers.length > 0))
+  if (Object.keys(state.pendingOffers).length === 0) {
+    state.phase = 'countdown'
+    state.countdownMsLeft = COUNTDOWN_MS
+    return
+  }
   state.phase = 'shopping'
-  state.pendingOffers = Object.fromEntries(
-    state.players.map(p => [p.id, rollOffers(rng, p.gear)])
-  )
 }
 
 function pickKind(wave: number, rng: Rng): EnemyKind {

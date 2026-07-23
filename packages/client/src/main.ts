@@ -21,6 +21,7 @@ import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
 import { apiBaseFromWsUrl, createGroupApi, ApiError } from './net/api.js'
 import type { ApiGroup } from './net/api.js'
 import { AudioEngine } from './audio/engine.js'
+import { DemoLoop } from './attract/demo.js'
 import { detectAudioEvents, musicForPhase } from './audio/events.js'
 
 const INPUT_SEND_MS = 50
@@ -125,6 +126,8 @@ let shownPhase: Phase | 'none' = 'none'
 let renderedOfferKey = ''
 let lastAudioState: GameState | undefined
 const audio = new AudioEngine(ART_BASE, browserPlatform.loadAudioMuted())
+const demo = new DemoLoop()
+let lastFrameAt = performance.now()
 
 function reflectAudioToggle(): void {
   ui.audioToggle.textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'
@@ -445,11 +448,20 @@ function resizeCanvas(): void {
 }
 
 function frame(): void {
-  const state = joined ? buffer.sample(performance.now()) : undefined
-  if (state) {
-    drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, state, selfId)
-    updateHud(hudElements, state, state.players.find(p => p.id === selfId))
-    syncScreens(state)
+  const now = performance.now()
+  const delta = Math.min(now - lastFrameAt, 250)
+  lastFrameAt = now
+  if (joined) {
+    ui.canvas.classList.remove('canvas-dimmed')
+    const state = buffer.sample(now)
+    if (state) {
+      drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, state, selfId)
+      updateHud(hudElements, state, state.players.find(p => p.id === selfId))
+      syncScreens(state)
+    }
+  } else {
+    ui.canvas.classList.add('canvas-dimmed')
+    drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, demo.advance(delta), undefined)
   }
   requestAnimationFrame(frame)
 }
