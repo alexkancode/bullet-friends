@@ -279,6 +279,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .designer-art {
@@ -302,7 +303,7 @@ body {
 }
 
 .designer-upload {
-  max-width: 150px;
+  flex-basis: 100%;
   font-size: 0.72rem;
   color: var(--ink-muted);
 }
