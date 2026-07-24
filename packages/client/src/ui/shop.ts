@@ -1,6 +1,7 @@
-import type { GameState } from '@bullet/core'
-import { gearById } from '@bullet/core'
+import type { GameDesign, GameState } from '@bullet/core'
+import { designGear } from '@bullet/core'
 import type { GearModifier } from '@bullet/core'
+import { artUrl } from '../render/sprites.js'
 
 const STAT_LABELS = {
   maxHp: 'Max HP',
@@ -27,6 +28,7 @@ export function renderShop(
   state: GameState,
   selfId: string | undefined,
   artBase: string,
+  design: GameDesign,
   onPick: (gearId: string) => void
 ): void {
   const offer = selfId ? state.pendingOffers[selfId] : undefined
@@ -42,13 +44,13 @@ export function renderShop(
   waiting.hidden = true
   const cards: HTMLButtonElement[] = []
   for (const gearId of offer) {
-    const item = gearById(gearId)
+    const item = designGear(design, gearId)
     if (!item) continue
     const card = document.createElement('button')
     card.className = 'gear-card'
     const img = document.createElement('img')
     img.className = 'gear-card-art'
-    img.src = `${artBase}${item.art}`
+    img.src = artUrl(artBase, item.art)
     img.alt = item.name
     const title = document.createElement('div')
     title.className = 'gear-card-name'

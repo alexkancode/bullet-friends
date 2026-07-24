@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { TokenIdentity } from '../auth/verifier.js'
-import type { Group, GroupStore, RunRecord, UserProfile } from './store.js'
+import type { DesignRecord, DesignSummary, Group, GroupStore, RunRecord, UserProfile } from './store.js'
 
 const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -35,6 +35,30 @@ export class MemoryGroupStore implements GroupStore {
     const profile = this.users.get(userId)
     if (profile) profile.camConsent = allowed
     return Promise.resolve()
+  }
+
+  private readonly designs = new Map<string, DesignRecord>()
+
+  saveDesign(ownerId: string, name: string, design: unknown, id?: string): Promise<string | undefined> {
+    if (id) {
+      const existing = this.designs.get(id)
+      if (!existing || existing.ownerId !== ownerId) return Promise.resolve(undefined)
+      this.designs.set(id, { id, ownerId, name, design })
+      return Promise.resolve(id)
+    }
+    const newId = `d-${randomUUID()}`
+    this.designs.set(newId, { id: newId, ownerId, name, design })
+    return Promise.resolve(newId)
+  }
+
+  listDesigns(ownerId: string): Promise<DesignSummary[]> {
+    return Promise.resolve(
+      [...this.designs.values()].filter(d => d.ownerId === ownerId).map(d => ({ id: d.id, name: d.name }))
+    )
+  }
+
+  getDesign(id: string): Promise<DesignRecord | undefined> {
+    return Promise.resolve(this.designs.get(id))
   }
 
   createGroup(owner: TokenIdentity, name: string): Promise<Group> {

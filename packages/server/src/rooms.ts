@@ -1,6 +1,6 @@
 import type WebSocket from 'ws'
-import type { GameState, Inputs, Rng } from '@bullet/core'
-import { addPlayer, createGameState, createRng, pickGear, removePlayer, startRun, step, TICK_MS } from '@bullet/core'
+import type { GameDesign, GameState, Inputs, Rng } from '@bullet/core'
+import { addPlayer, createGameState, createRng, defaultDesign, pickGear, removePlayer, sanitizeDesign, startRun, step, TICK_MS } from '@bullet/core'
 import type { ServerMessage } from '@bullet/protocol'
 import { encodeMessage } from '@bullet/protocol'
 import type { GroupStore } from './groups/store.js'
@@ -15,6 +15,7 @@ export interface Room {
   timer: ReturnType<typeof setInterval> | undefined
   groupId: string | undefined
   runRecorded: boolean
+  design: GameDesign
 }
 
 export class RoomManager {
@@ -55,12 +56,21 @@ export class RoomManager {
 
   start(room: Room): void {
     if (room.state.phase === 'lobby' || room.state.phase === 'runOver') {
-      startRun(room.state)
+      startRun(room.state, room.design)
     }
   }
 
   pick(room: Room, playerId: string, gearId: string): void {
-    pickGear(room.state, playerId, gearId)
+    pickGear(room.state, playerId, gearId, room.design)
+  }
+
+  setDesign(room: Room, raw: unknown): boolean {
+    if (room.state.phase !== 'lobby' && room.state.phase !== 'runOver') return false
+    const clean = sanitizeDesign(raw)
+    if (!clean) return false
+    room.design = clean
+    this.broadcast(room, { t: 'design', design: clean })
+    return true
   }
 
   linkGroup(room: Room, groupId: string): void {
@@ -99,7 +109,8 @@ export class RoomManager {
       rng: createRng(this.seed + this.rooms.size),
       timer: undefined,
       groupId: undefined,
-      runRecorded: false
+      runRecorded: false,
+      design: defaultDesign()
     }
     this.rooms.set(normalized, room)
     return room
@@ -108,7 +119,7 @@ export class RoomManager {
   private ensureLoop(room: Room): void {
     if (room.timer) return
     room.timer = setInterval(() => {
-      step(room.state, room.inputs, room.rng)
+      step(room.state, room.inputs, room.rng, room.design)
       this.recordFinishedRun(room)
       this.broadcast(room, { t: 'snapshot', serverTime: this.now(), state: room.state })
     }, TICK_MS)

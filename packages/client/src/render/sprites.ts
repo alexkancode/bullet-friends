@@ -1,3 +1,7 @@
+export function artUrl(baseUrl: string, art: string): string {
+  return art.startsWith('data:') ? art : `${baseUrl}${art}`
+}
+
 export class SpriteStore {
   private readonly images = new Map<string, HTMLImageElement>()
 
@@ -7,7 +11,7 @@ export class SpriteStore {
     const existing = this.images.get(path)
     if (existing) return existing
     const image = new Image()
-    image.src = `${this.baseUrl}${path}`
+    image.src = artUrl(this.baseUrl, path)
     this.images.set(path, image)
     return image
   }

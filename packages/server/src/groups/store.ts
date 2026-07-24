@@ -28,7 +28,22 @@ export interface RunRecord {
   players: RunRecordPlayer[]
 }
 
+export interface DesignRecord {
+  id: string
+  ownerId: string
+  name: string
+  design: unknown
+}
+
+export interface DesignSummary {
+  id: string
+  name: string
+}
+
 export interface GroupStore {
+  saveDesign(ownerId: string, name: string, design: unknown, id?: string): Promise<string | undefined>
+  listDesigns(ownerId: string): Promise<DesignSummary[]>
+  getDesign(id: string): Promise<DesignRecord | undefined>
   upsertUser(user: TokenIdentity): Promise<void>
   getProfile(userId: string): Promise<UserProfile | undefined>
   getUserByEmail(email: string): Promise<UserProfile | undefined>

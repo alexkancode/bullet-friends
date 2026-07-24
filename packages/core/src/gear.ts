@@ -33,8 +33,8 @@ export function gearById(id: string): GearItem | undefined {
   return GEAR_CATALOG.find(g => g.id === id)
 }
 
-export function rollOffers(rng: Rng, ownedIds: string[], count = 3): string[] {
-  const pool = GEAR_CATALOG.filter(g => !ownedIds.includes(g.id)).map(g => g.id)
+export function rollOffers(rng: Rng, ownedIds: string[], catalog: GearItem[] = GEAR_CATALOG, count = 3): string[] {
+  const pool = catalog.filter(g => !ownedIds.includes(g.id)).map(g => g.id)
   const offers: string[] = []
   while (offers.length < count && pool.length > 0) {
     const index = Math.floor(rng() * pool.length)

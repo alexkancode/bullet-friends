@@ -88,6 +88,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
         }
         session = rooms.join(msg.room, ws, msg.name.slice(0, 24))
         ws.send(encodeMessage({ t: 'welcome', playerId: session.playerId, room: session.room.code }))
+        ws.send(encodeMessage({ t: 'design', design: session.room.design }))
         if (msg.groupId && msg.idToken) void linkRoomGroup(session.room, msg.groupId, msg.idToken)
         return
       }
@@ -96,6 +97,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
       if (msg.t === 'start') rooms.start(session.room)
       if (msg.t === 'pickGear') rooms.pick(session.room, session.playerId, msg.gearId)
       if (msg.t === 'playAgain') rooms.backToLobby(session.room)
+      if (msg.t === 'setDesign') rooms.setDesign(session.room, msg.design)
     })
 
     ws.on('close', () => {

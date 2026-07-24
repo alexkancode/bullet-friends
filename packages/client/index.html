@@ -79,12 +79,17 @@
         <div id="step-ready" hidden>
           <h2 class="panel-title" id="ready-title"></h2>
           <p class="room-line">Group room <strong id="room-label"></strong></p>
+          <label class="field">
+            <span>Game design</span>
+            <select id="design-select"></select>
+          </label>
           <button id="play-button" class="button button-primary" type="button">Play</button>
           <div class="group-actions">
             <button id="invite-button" class="button" type="button">Copy invite link</button>
             <button id="history-button" class="button" type="button">Run history</button>
             <button id="switch-group-button" class="button" type="button">Switch group</button>
           </div>
+          <button id="studio-button" class="button button-wide" type="button">Design studio</button>
           <p id="group-note" class="cam-note"></p>
         </div>
 
@@ -112,6 +117,23 @@
         <div id="stats-charts" class="charts-grid"></div>
         <div id="stats-table-host" class="table-host"></div>
         <button id="play-again-button" class="button button-primary" type="button">Back to lobby</button>
+      </div>
+    </section>
+
+    <section id="designer" class="overlay" hidden>
+      <div class="panel designer-panel">
+        <h2 class="panel-title">Design studio</h2>
+        <label class="field">
+          <span>Design name</span>
+          <input id="designer-name" maxlength="40" />
+        </label>
+        <div id="designer-tabs" class="tab-row"></div>
+        <div id="designer-sections" class="designer-sections"></div>
+        <p id="designer-note" class="error-line"></p>
+        <div class="group-actions">
+          <button id="designer-save" class="button button-primary" type="button">Save design</button>
+          <button id="designer-close" class="button" type="button">Close</button>
+        </div>
       </div>
     </section>
 

@@ -1,5 +1,7 @@
 import type { Rng } from './rng.js'
 import type { GameState, Inputs } from './state.js'
+import type { GameDesign } from './design.js'
+import { defaultDesign, designGear } from './design.js'
 import { spawnPosition } from './state.js'
 import { applyInputs } from './movement.js'
 import { advanceProjectiles, fireWeapons, moveEnemies, resolveContactDamage, resolveProjectileHits } from './combat.js'
@@ -7,14 +9,13 @@ import { collectOrbs, awardXp, refreshStats, computeStats } from './progression.
 import { advanceWave, beginWave } from './waves.js'
 import { COUNTDOWN_MS, TICK_MS } from './constants.js'
 import { createWaveStats } from './stats.js'
-import { gearById } from './gear.js'
 
-export function startRun(state: GameState): void {
+export function startRun(state: GameState, design: GameDesign = defaultDesign()): void {
   state.players.forEach((player, index) => {
     player.level = 1
     player.xp = 0
     player.gear = []
-    player.stats = computeStats(1, [])
+    player.stats = computeStats(1, [], design.gear)
     player.hp = player.stats.maxHp
     player.alive = true
     player.fireCooldownMs = 0
@@ -22,15 +23,15 @@ export function startRun(state: GameState): void {
     player.waveStats = createWaveStats()
     player.history = []
   })
-  beginWave(state, 1)
+  beginWave(state, 1, design)
 }
 
-export function step(state: GameState, inputs: Inputs, rng: Rng): void {
+export function step(state: GameState, inputs: Inputs, rng: Rng, design: GameDesign = defaultDesign()): void {
   state.tick += 1
   if (state.phase === 'countdown') {
     applyInputs(state, inputs)
     state.countdownMsLeft -= TICK_MS
-    if (state.countdownMsLeft <= 0) beginWave(state, state.wave + 1)
+    if (state.countdownMsLeft <= 0) beginWave(state, state.wave + 1, design)
     return
   }
   if (state.phase !== 'fighting') return
@@ -40,22 +41,22 @@ export function step(state: GameState, inputs: Inputs, rng: Rng): void {
   moveEnemies(state)
   resolveProjectileHits(state)
   resolveContactDamage(state)
-  collectOrbs(state)
+  collectOrbs(state, design.gear)
   if (state.players.length > 0 && state.players.every(p => !p.alive)) {
     endRun(state)
     return
   }
-  advanceWave(state, rng)
+  advanceWave(state, rng, design)
 }
 
-export function pickGear(state: GameState, playerId: string, gearId: string): void {
+export function pickGear(state: GameState, playerId: string, gearId: string, design: GameDesign = defaultDesign()): void {
   if (state.phase !== 'shopping') return
   const offer = state.pendingOffers[playerId]
-  if (!offer || !offer.includes(gearId) || !gearById(gearId)) return
+  if (!offer || !offer.includes(gearId) || !designGear(design, gearId)) return
   const player = state.players.find(p => p.id === playerId)
   if (!player) return
   player.gear.push(gearId)
-  refreshStats(player)
+  refreshStats(player, design.gear)
   delete state.pendingOffers[playerId]
   if (Object.keys(state.pendingOffers).length === 0) {
     state.phase = 'countdown'

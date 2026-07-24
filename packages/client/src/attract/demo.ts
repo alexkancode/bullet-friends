@@ -39,8 +39,9 @@ export class DemoLoop {
     step(this.state, botInputs(this.state), this.rng)
     while (this.state.phase === 'shopping') {
       const entry = Object.entries(this.state.pendingOffers).find(([, offer]) => offer.length > 0)
-      if (!entry) break
-      pickGear(this.state, entry[0], entry[1][0]!)
+      const gearId = entry?.[1][0]
+      if (!entry || !gearId) break
+      pickGear(this.state, entry[0], gearId)
     }
   }
 }

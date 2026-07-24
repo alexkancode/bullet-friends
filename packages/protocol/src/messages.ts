@@ -1,4 +1,4 @@
-import type { GameState, Vec } from '@bullet/core'
+import type { GameDesign, GameState, Vec } from '@bullet/core'
 
 export interface JoinMessage {
   t: 'join'
@@ -28,7 +28,12 @@ export interface PlayAgainMessage {
   t: 'playAgain'
 }
 
-export type ClientMessage = JoinMessage | InputMessage | StartMessage | PickGearMessage | PlayAgainMessage
+export interface SetDesignMessage {
+  t: 'setDesign'
+  design: GameDesign
+}
+
+export type ClientMessage = JoinMessage | InputMessage | StartMessage | PickGearMessage | PlayAgainMessage | SetDesignMessage
 
 export interface WelcomeMessage {
   t: 'welcome'
@@ -53,10 +58,15 @@ export interface ErrorMessage {
   message: string
 }
 
-export type ServerMessage = WelcomeMessage | SnapshotMessage | RosterMessage | ErrorMessage
+export interface DesignMessage {
+  t: 'design'
+  design: GameDesign
+}
+
+export type ServerMessage = WelcomeMessage | SnapshotMessage | RosterMessage | ErrorMessage | DesignMessage
 
 export type Message = ClientMessage | ServerMessage
 
-export const CLIENT_MESSAGE_TAGS = ['join', 'input', 'start', 'pickGear', 'playAgain'] as const satisfies readonly ClientMessage['t'][]
+export const CLIENT_MESSAGE_TAGS = ['join', 'input', 'start', 'pickGear', 'playAgain', 'setDesign'] as const satisfies readonly ClientMessage['t'][]
 
-export const SERVER_MESSAGE_TAGS = ['welcome', 'snapshot', 'roster', 'error'] as const satisfies readonly ServerMessage['t'][]
+export const SERVER_MESSAGE_TAGS = ['welcome', 'snapshot', 'roster', 'error', 'design'] as const satisfies readonly ServerMessage['t'][]

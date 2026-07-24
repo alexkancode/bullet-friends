@@ -16,6 +16,10 @@ export const ENEMY_SPECS: Record<EnemyKind, EnemySpec> = {
   brute: { baseHp: 80, speed: 55, radius: 44, touchDamagePerSecond: 40, xpValue: 10, fromWave: 4, weight: 15 }
 }
 
+export function scaledEnemyHp(baseHp: number, wave: number): number {
+  return Math.round(baseHp * (1 + 0.2 * (wave - 1)))
+}
+
 export function enemyHpForWave(kind: EnemyKind, wave: number): number {
-  return Math.round(ENEMY_SPECS[kind].baseHp * (1 + 0.2 * (wave - 1)))
+  return scaledEnemyHp(ENEMY_SPECS[kind].baseHp, wave)
 }

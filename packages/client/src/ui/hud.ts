@@ -1,5 +1,5 @@
-import type { GameState, PlayerState } from '@bullet/core'
-import { waveDurationMs, xpToNextLevel } from '@bullet/core'
+import type { GameDesign, GameState, PlayerState } from '@bullet/core'
+import { defaultDesign, levelForWave, xpToNextLevel } from '@bullet/core'
 
 export interface HudElements {
   wave: HTMLElement
@@ -10,9 +10,9 @@ export interface HudElements {
   levelLabel: HTMLElement
 }
 
-export function updateHud(elements: HudElements, state: GameState, self: PlayerState | undefined): void {
+export function updateHud(elements: HudElements, state: GameState, self: PlayerState | undefined, design: GameDesign = defaultDesign()): void {
   elements.wave.textContent = `Wave ${state.wave}`
-  const duration = waveDurationMs(Math.max(state.wave, 1))
+  const duration = levelForWave(design, Math.max(state.wave, 1)).durationMs
   elements.timerFill.style.setProperty('--fill', `${(state.waveMsLeft / duration) * 100}%`)
   if (!self) return
   elements.hpFill.style.setProperty('--fill', `${(self.hp / self.stats.maxHp) * 100}%`)

@@ -1,3 +1,4 @@
+import type { GameDesign } from '@bullet/core'
 import type { OnboardProfile } from '../ui/onboarding.js'
 
 export interface ApiGroup {
@@ -17,7 +18,15 @@ export interface AuthResult {
   profile: OnboardProfile
 }
 
+export interface DesignSummary {
+  id: string
+  name: string
+}
+
 export interface GroupApi {
+  listDesigns(): Promise<DesignSummary[]>
+  saveDesign(design: GameDesign, id?: string): Promise<string | undefined>
+  getDesign(id: string): Promise<GameDesign | undefined>
   signup(name: string, email: string, password: string): Promise<AuthResult>
   login(email: string, password: string): Promise<AuthResult>
   googleExchange(idToken: string): Promise<AuthResult>
@@ -56,6 +65,9 @@ export function createGroupApi(baseUrl: string, token: () => string | undefined)
     return json as T
   }
   return {
+    listDesigns: () => call('GET', '/api/designs'),
+    saveDesign: (design, id) => call<{ id: string }>('POST', '/api/designs', { design, ...(id ? { id } : {}) }).then(r => r.id).catch(() => undefined),
+    getDesign: id => call<{ design: GameDesign }>('GET', `/api/designs/${id}`).then(r => r.design).catch(() => undefined),
     signup: (name, email, password) => call('POST', '/api/auth/signup', { name, email, password }),
     login: (email, password) => call('POST', '/api/auth/login', { email, password }),
     googleExchange: idToken => call('POST', '/api/auth/google', { idToken }),

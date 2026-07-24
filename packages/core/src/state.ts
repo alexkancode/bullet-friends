@@ -1,6 +1,7 @@
 import type { Vec } from './geometry.js'
-import type { EnemyKind } from './enemies.js'
-import { enemyHpForWave, ENEMY_SPECS } from './enemies.js'
+import { scaledEnemyHp } from './enemies.js'
+import type { GameDesign } from './design.js'
+import { defaultDesign, designEnemy } from './design.js'
 import type { WaveStats } from './stats.js'
 import { createWaveStats } from './stats.js'
 import { ARENA } from './constants.js'
@@ -31,7 +32,7 @@ export interface PlayerState {
 
 export interface EnemyState {
   id: number
-  kind: EnemyKind
+  kind: string
   pos: Vec
   hp: number
   maxHp: number
@@ -132,9 +133,10 @@ export function spawnPosition(index: number): Vec {
   return { x: center.x + Math.cos(angle) * 120, y: center.y + Math.sin(angle) * 120 }
 }
 
-export function spawnEnemy(state: GameState, kind: EnemyKind, pos: Vec): EnemyState {
-  const spec = ENEMY_SPECS[kind]
-  const hp = enemyHpForWave(kind, Math.max(state.wave, 1))
+export function spawnEnemy(state: GameState, kind: string, pos: Vec, design: GameDesign = defaultDesign()): EnemyState | undefined {
+  const spec = designEnemy(design, kind)
+  if (!spec) return undefined
+  const hp = scaledEnemyHp(spec.baseHp, Math.max(state.wave, 1))
   const enemy: EnemyState = {
     id: state.nextEntityId++,
     kind,

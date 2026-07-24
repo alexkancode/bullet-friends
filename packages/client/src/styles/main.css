@@ -247,6 +247,133 @@ body {
   border-color: var(--accent);
 }
 
+.designer-panel {
+  max-width: 900px;
+}
+
+.designer-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.designer-card {
+  background: var(--surface-page);
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.designer-card-title {
+  font-weight: 700;
+}
+
+.designer-art-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.designer-art {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: var(--surface-panel);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.designer-art-row input[type='text'],
+.designer-art-row input:not([type]) {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  color: var(--ink-primary);
+  background: var(--surface-panel);
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+}
+
+.designer-upload {
+  max-width: 150px;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+.designer-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+}
+
+.designer-field input,
+.designer-field select {
+  width: 110px;
+  padding: 5px 8px;
+  color: var(--ink-primary);
+  background: var(--surface-panel);
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+}
+
+.designer-mod {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.designer-mod select,
+.designer-mod input {
+  padding: 5px 6px;
+  color: var(--ink-primary);
+  background: var(--surface-panel);
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+  width: 110px;
+}
+
+.designer-mix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.designer-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+}
+
+.designer-add {
+  align-self: start;
+  padding: 8px 14px;
+}
+
+#design-select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: var(--ink-primary);
+  background: var(--surface-page);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+}
+
 .gsi-button {
   display: flex;
   justify-content: center;

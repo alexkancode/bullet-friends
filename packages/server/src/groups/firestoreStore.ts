@@ -1,7 +1,7 @@
 import { createPrivateKey, sign } from 'node:crypto'
 import { randomUUID } from 'node:crypto'
 import type { TokenIdentity } from '../auth/verifier.js'
-import type { Group, GroupStore, RunRecord, UserProfile } from './store.js'
+import type { DesignRecord, DesignSummary, Group, GroupStore, RunRecord, UserProfile } from './store.js'
 import { base64UrlEncode } from '../auth/jwt.js'
 import { fromFirestoreFields, toFirestoreFields } from './firestoreValues.js'
 import type { FirestoreValue } from './firestoreValues.js'
@@ -66,6 +66,41 @@ export class FirestoreGroupStore implements GroupStore {
     await this.call('PATCH', `/users/${userId}?updateMask.fieldPaths=camConsent`, {
       fields: toFirestoreFields({ camConsent: allowed })
     })
+  }
+
+  async saveDesign(ownerId: string, name: string, design: unknown, id?: string): Promise<string | undefined> {
+    if (id) {
+      const existing = await this.getDesign(id)
+      if (!existing || existing.ownerId !== ownerId) return undefined
+    }
+    const designId = id ?? `d-${randomUUID()}`
+    await this.call('PATCH', `/designs/${designId}`, {
+      fields: toFirestoreFields({ ownerId, name, json: JSON.stringify(design) })
+    })
+    return designId
+  }
+
+  async listDesigns(ownerId: string): Promise<DesignSummary[]> {
+    const results = (await this.call('POST', ':runQuery', {
+      structuredQuery: {
+        from: [{ collectionId: 'designs' }],
+        where: { fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: ownerId } } }
+      }
+    })) as { document?: FirestoreDocument }[]
+    return results.flatMap(r =>
+      r.document?.fields ? [{ id: idOf(r.document.name), name: String(fromFirestoreFields(r.document.fields)['name'] ?? '') }] : []
+    )
+  }
+
+  async getDesign(id: string): Promise<DesignRecord | undefined> {
+    const doc = (await this.call('GET', `/designs/${id}`)) as FirestoreDocument | undefined
+    if (!doc?.fields) return undefined
+    const fields = fromFirestoreFields(doc.fields) as { ownerId: string; name: string; json: string }
+    try {
+      return { id, ownerId: fields.ownerId, name: fields.name, design: JSON.parse(fields.json) as unknown }
+    } catch {
+      return undefined
+    }
   }
 
   async createGroup(owner: TokenIdentity, name: string): Promise<Group> {

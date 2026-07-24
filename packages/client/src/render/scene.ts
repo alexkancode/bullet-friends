@@ -1,15 +1,9 @@
-import type { EnemyState, GameState, PlayerState } from '@bullet/core'
-import { gearById, ARENA, PLAYER_RADIUS, PROJECTILE_RADIUS, ORB_RADIUS } from '@bullet/core'
+import type { EnemyState, GameDesign, GameState, PlayerState } from '@bullet/core'
+import { designEnemy, designGear, ARENA, PLAYER_RADIUS, PROJECTILE_RADIUS, ORB_RADIUS } from '@bullet/core'
 import type { SpriteStore } from './sprites.js'
 import type { CamFeeds } from '../camera/feeds.js'
 import { playerColor, GAME, INK, SURFACE } from './palette.js'
 import { placeGear } from './gearLayout.js'
-
-const ENEMY_ART: Record<EnemyState['kind'], string> = {
-  blob: 'art/blob.svg',
-  sprinter: 'art/sprinter.svg',
-  brute: 'art/brute.svg'
-}
 
 
 export interface SceneDeps {
@@ -17,6 +11,7 @@ export interface SceneDeps {
   sprites: SpriteStore
   feeds: CamFeeds
   selfVideo: HTMLVideoElement
+  design: GameDesign
 }
 
 export function drawScene(deps: SceneDeps, state: GameState, selfId: string | undefined): void {
@@ -33,7 +28,7 @@ export function drawScene(deps: SceneDeps, state: GameState, selfId: string | un
 
   drawArena(ctx)
   for (const orb of state.orbs) drawOrb(ctx, orb.pos.x, orb.pos.y)
-  for (const enemy of state.enemies) drawEnemy(ctx, deps.sprites, enemy)
+  for (const enemy of state.enemies) drawEnemy(ctx, deps, enemy)
   for (const proj of state.projectiles) drawProjectile(ctx, proj.pos.x, proj.pos.y)
   state.players.forEach((player, index) => drawPlayer(ctx, deps, player, index, player.id === selfId))
 
@@ -87,8 +82,8 @@ function drawProjectile(ctx: CanvasRenderingContext2D, x: number, y: number): vo
   ctx.fill()
 }
 
-function drawEnemy(ctx: CanvasRenderingContext2D, sprites: SpriteStore, enemy: EnemyState): void {
-  const sprite = sprites.ready(ENEMY_ART[enemy.kind])
+function drawEnemy(ctx: CanvasRenderingContext2D, deps: SceneDeps, enemy: EnemyState): void {
+  const sprite = deps.sprites.ready(designEnemy(deps.design, enemy.kind)?.art ?? '')
   const size = enemy.radius * 2.2
   if (sprite) {
     ctx.drawImage(sprite, enemy.pos.x - size / 2, enemy.pos.y - size / 2, size, size)
@@ -138,7 +133,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   ctx.arc(x, y, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  for (const gearId of player.gear) drawGear(ctx, deps.sprites, gearId, x, y, r)
+  for (const gearId of player.gear) drawGear(ctx, deps, gearId, x, y, r)
 
   ctx.fillStyle = INK.secondary
   ctx.font = '600 16px system-ui, sans-serif'
@@ -148,10 +143,10 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   drawBar(ctx, x, y + r + 28, r * 2, 6, player.hp / player.stats.maxHp, GAME.hpGood)
 }
 
-function drawGear(ctx: CanvasRenderingContext2D, sprites: SpriteStore, gearId: string, x: number, y: number, r: number): void {
-  const item = gearById(gearId)
+function drawGear(ctx: CanvasRenderingContext2D, deps: SceneDeps, gearId: string, x: number, y: number, r: number): void {
+  const item = designGear(deps.design, gearId)
   if (!item) return
-  const sprite = sprites.ready(item.art)
+  const sprite = deps.sprites.ready(item.art)
   if (!sprite) return
   const { width, height, centerYOffset } = placeGear(item.slot, r, sprite.naturalHeight / sprite.naturalWidth)
   ctx.drawImage(sprite, x - width / 2, y + centerYOffset - height / 2, width, height)

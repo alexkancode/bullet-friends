@@ -1,11 +1,137 @@
 {
-  "join": { "t": "join", "room": "GLHF", "name": "Alex", "protocolVersion": 1 },
-  "joinGrouped": { "t": "join", "room": "GLHF", "name": "Alex", "protocolVersion": 1, "groupId": "g1", "idToken": "eyJ.x.y" },
-  "input": { "t": "input", "seq": 12, "move": { "x": 1, "y": 0 } },
-  "start": { "t": "start" },
-  "pickGear": { "t": "pickGear", "gearId": "top-hat" },
-  "playAgain": { "t": "playAgain" },
-  "welcome": { "t": "welcome", "playerId": "ab12", "room": "GLHF" },
-  "roster": { "t": "roster", "players": [{ "id": "ab12", "name": "Alex" }] },
-  "error": { "t": "error", "code": "version", "message": "update your client" }
+  "join": {
+    "t": "join",
+    "room": "GLHF",
+    "name": "Alex",
+    "protocolVersion": 1
+  },
+  "joinGrouped": {
+    "t": "join",
+    "room": "GLHF",
+    "name": "Alex",
+    "protocolVersion": 1,
+    "groupId": "g1",
+    "idToken": "eyJ.x.y"
+  },
+  "input": {
+    "t": "input",
+    "seq": 12,
+    "move": {
+      "x": 1,
+      "y": 0
+    }
+  },
+  "start": {
+    "t": "start"
+  },
+  "pickGear": {
+    "t": "pickGear",
+    "gearId": "top-hat"
+  },
+  "playAgain": {
+    "t": "playAgain"
+  },
+  "welcome": {
+    "t": "welcome",
+    "playerId": "ab12",
+    "room": "GLHF"
+  },
+  "roster": {
+    "t": "roster",
+    "players": [
+      {
+        "id": "ab12",
+        "name": "Alex"
+      }
+    ]
+  },
+  "error": {
+    "t": "error",
+    "code": "version",
+    "message": "update your client"
+  },
+  "setDesign": {
+    "t": "setDesign",
+    "design": {
+      "name": "Mini",
+      "enemies": [
+        {
+          "id": "magma",
+          "name": "Magma",
+          "baseHp": 6,
+          "speed": 120,
+          "radius": 20,
+          "touchDamagePerSecond": 15,
+          "xpValue": 5,
+          "weight": 100,
+          "art": "art/blob.svg"
+        }
+      ],
+      "gear": [
+        {
+          "id": "crown",
+          "name": "Crown",
+          "slot": "hat",
+          "art": "art/gear/top-hat.svg",
+          "modifiers": [
+            {
+              "stat": "damage",
+              "mult": 1.5
+            }
+          ]
+        }
+      ],
+      "levels": [
+        {
+          "durationMs": 5000,
+          "spawnIntervalMs": 400,
+          "enemyIds": [
+            "magma"
+          ]
+        }
+      ]
+    }
+  },
+  "design": {
+    "t": "design",
+    "design": {
+      "name": "Mini",
+      "enemies": [
+        {
+          "id": "magma",
+          "name": "Magma",
+          "baseHp": 6,
+          "speed": 120,
+          "radius": 20,
+          "touchDamagePerSecond": 15,
+          "xpValue": 5,
+          "weight": 100,
+          "art": "art/blob.svg"
+        }
+      ],
+      "gear": [
+        {
+          "id": "crown",
+          "name": "Crown",
+          "slot": "hat",
+          "art": "art/gear/top-hat.svg",
+          "modifiers": [
+            {
+              "stat": "damage",
+              "mult": 1.5
+            }
+          ]
+        }
+      ],
+      "levels": [
+        {
+          "durationMs": 5000,
+          "spawnIntervalMs": 400,
+          "enemyIds": [
+            "magma"
+          ]
+        }
+      ]
+    }
+  }
 }

@@ -1,5 +1,5 @@
-import type { GameState, Phase } from '@bullet/core'
-import { roomCodeForGroup } from '@bullet/core'
+import type { GameDesign, GameState, Phase } from '@bullet/core'
+import { defaultDesign, roomCodeForGroup } from '@bullet/core'
 import { PROTOCOL_VERSION } from '@bullet/protocol'
 import type { GameSocket } from './net/socket.js'
 import { connectSocket } from './net/socket.js'
@@ -22,6 +22,7 @@ import { apiBaseFromWsUrl, createGroupApi, ApiError } from './net/api.js'
 import type { ApiGroup } from './net/api.js'
 import { AudioEngine } from './audio/engine.js'
 import { DemoLoop } from './attract/demo.js'
+import { DesignerStudio } from './ui/designer.js'
 import { detectAudioEvents, musicForPhase } from './audio/events.js'
 
 const INPUT_SEND_MS = 50
@@ -91,6 +92,9 @@ const ui = {
   historyTableHost: el('history-table-host'),
   historyCloseButton: el<HTMLButtonElement>('history-close-button'),
   audioToggle: el<HTMLButtonElement>('audio-toggle'),
+  designSelect: el<HTMLSelectElement>('design-select'),
+  studioButton: el<HTMLButtonElement>('studio-button'),
+  designer: el('designer'),
   canvas: el<HTMLCanvasElement>('game')
 }
 
@@ -128,6 +132,52 @@ let lastAudioState: GameState | undefined
 const audio = new AudioEngine(ART_BASE, browserPlatform.loadAudioMuted())
 const demo = new DemoLoop()
 let lastFrameAt = performance.now()
+const DEMO_DESIGN = defaultDesign()
+let currentDesign: GameDesign = defaultDesign()
+let myDesigns: { id: string; name: string }[] = []
+
+const studio = new DesignerStudio(
+  {
+    overlay: ui.designer,
+    nameInput: el<HTMLInputElement>('designer-name'),
+    tabsHost: el('designer-tabs'),
+    sectionHost: el('designer-sections'),
+    note: el('designer-note'),
+    saveButton: el<HTMLButtonElement>('designer-save'),
+    closeButton: el<HTMLButtonElement>('designer-close')
+  },
+  ART_BASE,
+  (design, id) => groupApi.saveDesign(design, id),
+  () => void refreshDesigns()
+)
+
+async function refreshDesigns(): Promise<void> {
+  myDesigns = await groupApi.listDesigns().catch(() => [])
+  const selected = ui.designSelect.value
+  ui.designSelect.replaceChildren()
+  const classic = document.createElement('option')
+  classic.value = ''
+  classic.textContent = 'Classic'
+  ui.designSelect.append(classic)
+  for (const design of myDesigns) {
+    const option = document.createElement('option')
+    option.value = design.id
+    option.textContent = design.name
+    ui.designSelect.append(option)
+  }
+  if ([...ui.designSelect.options].some(o => o.value === selected)) ui.designSelect.value = selected
+}
+
+ui.studioButton.addEventListener('click', () => {
+  const selectedId = ui.designSelect.value
+  if (!selectedId) {
+    studio.open(defaultDesign(), undefined)
+    return
+  }
+  void groupApi.getDesign(selectedId).then(design => {
+    studio.open(design ?? defaultDesign(), design ? selectedId : undefined)
+  })
+})
 
 function reflectAudioToggle(): void {
   ui.audioToggle.textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'
@@ -205,6 +255,7 @@ async function refreshGroups(): Promise<void> {
   const me = await groupApi.me()
   profile = me.profile
   myGroups = me.groups
+  void refreshDesigns()
   if (activeGroup) activeGroup = myGroups.find(g => g.id === activeGroup?.id) ?? activeGroup
   if (myGroups.length === 1 && !activeGroup) activeGroup = myGroups[0]
 }
@@ -350,6 +401,7 @@ async function joinGame(): Promise<void> {
           joined = true
           renderFlow()
         }
+        if (msg.t === 'design') currentDesign = msg.design
         if (msg.t === 'snapshot') {
           buffer.push(performance.now(), msg.state)
           for (const event of detectAudioEvents(lastAudioState, msg.state, selfId)) audio.play(event)
@@ -380,6 +432,11 @@ async function joinGame(): Promise<void> {
     groupId: activeGroup.id,
     idToken: sessionToken
   })
+  const designId = ui.designSelect.value
+  if (designId) {
+    const design = await groupApi.getDesign(designId)
+    if (design) socket.send({ t: 'setDesign', design })
+  }
   await startCameraIfConsented()
 }
 
@@ -411,7 +468,7 @@ function syncScreens(state: GameState): void {
     const offerKey = selfId ? JSON.stringify(state.pendingOffers[selfId] ?? []) + Object.keys(state.pendingOffers).join() : ''
     if (shownPhase !== phase || offerKey !== renderedOfferKey) {
       renderedOfferKey = offerKey
-      renderShop(ui.shopCards, ui.shopWaiting, state, selfId, ART_BASE, gearId => {
+      renderShop(ui.shopCards, ui.shopWaiting, state, selfId, ART_BASE, currentDesign, gearId => {
         audio.play('gearPick')
         socket?.send({ t: 'pickGear', gearId })
       })
@@ -455,13 +512,13 @@ function frame(): void {
     ui.canvas.classList.remove('canvas-dimmed')
     const state = buffer.sample(now)
     if (state) {
-      drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, state, selfId)
-      updateHud(hudElements, state, state.players.find(p => p.id === selfId))
+      drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo, design: currentDesign }, state, selfId)
+      updateHud(hudElements, state, state.players.find(p => p.id === selfId), currentDesign)
       syncScreens(state)
     }
   } else {
     ui.canvas.classList.add('canvas-dimmed')
-    drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo }, demo.advance(delta), undefined)
+    drawScene({ canvas: ui.canvas, sprites, feeds, selfVideo, design: DEMO_DESIGN }, demo.advance(delta), undefined)
   }
   requestAnimationFrame(frame)
 }

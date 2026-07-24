@@ -1,49 +1,45 @@
 import type { GameState } from './state.js'
-import type { EnemyKind } from './enemies.js'
-import { ENEMY_SPECS } from './enemies.js'
 import type { Rng } from './rng.js'
 import type { Vec } from './geometry.js'
+import type { GameDesign, LevelDesign } from './design.js'
+import { defaultDesign, designEnemy, levelForWave } from './design.js'
 import { spawnEnemy } from './state.js'
 import { createWaveStats } from './stats.js'
 import { rollOffers } from './gear.js'
 import { bankRemainingOrbs } from './progression.js'
 import { ARENA, COUNTDOWN_MS, TICK_MS } from './constants.js'
 
-export function waveDurationMs(wave: number): number {
-  return 20000 + (wave - 1) * 4000
-}
+export { waveDurationMs, spawnIntervalMs } from './pacing.js'
 
-export function spawnIntervalMs(wave: number): number {
-  return Math.max(300, 1100 - (wave - 1) * 100)
-}
-
-export function beginWave(state: GameState, wave: number): void {
+export function beginWave(state: GameState, wave: number, design: GameDesign = defaultDesign()): void {
+  const level = levelForWave(design, wave)
   state.phase = 'fighting'
   state.wave = wave
-  state.waveMsLeft = waveDurationMs(wave)
-  state.spawnCooldownMs = spawnIntervalMs(wave)
+  state.waveMsLeft = level.durationMs
+  state.spawnCooldownMs = level.spawnIntervalMs
   state.enemies = []
   state.projectiles = []
   state.orbs = []
   state.pendingOffers = {}
 }
 
-export function advanceWave(state: GameState, rng: Rng): void {
+export function advanceWave(state: GameState, rng: Rng, design: GameDesign = defaultDesign()): void {
   state.waveMsLeft -= TICK_MS
   if (state.waveMsLeft <= 0) {
-    endWave(state, rng)
+    endWave(state, rng, design)
     return
   }
   state.spawnCooldownMs -= TICK_MS
   if (state.spawnCooldownMs <= 0) {
-    spawnEnemy(state, pickKind(state.wave, rng), edgePosition(rng))
-    state.spawnCooldownMs = spawnIntervalMs(state.wave)
+    const level = levelForWave(design, state.wave)
+    spawnEnemy(state, pickKind(level, design, rng), edgePosition(rng), design)
+    state.spawnCooldownMs = level.spawnIntervalMs
   }
 }
 
-function endWave(state: GameState, rng: Rng): void {
+function endWave(state: GameState, rng: Rng, design: GameDesign): void {
   state.waveMsLeft = 0
-  bankRemainingOrbs(state)
+  bankRemainingOrbs(state, design.gear)
   state.enemies = []
   state.projectiles = []
   for (const player of state.players) {
@@ -54,7 +50,7 @@ function endWave(state: GameState, rng: Rng): void {
       player.hp = player.stats.maxHp / 2
     }
   }
-  const rolled: [string, string[]][] = state.players.map(p => [p.id, rollOffers(rng, p.gear)])
+  const rolled: [string, string[]][] = state.players.map(p => [p.id, rollOffers(rng, p.gear, design.gear)])
   state.pendingOffers = Object.fromEntries(rolled.filter(([, offers]) => offers.length > 0))
   if (Object.keys(state.pendingOffers).length === 0) {
     state.phase = 'countdown'
@@ -64,15 +60,14 @@ function endWave(state: GameState, rng: Rng): void {
   state.phase = 'shopping'
 }
 
-function pickKind(wave: number, rng: Rng): EnemyKind {
-  const kinds = (Object.keys(ENEMY_SPECS) as EnemyKind[]).filter(k => ENEMY_SPECS[k].fromWave <= wave)
-  const totalWeight = kinds.reduce((sum, k) => sum + ENEMY_SPECS[k].weight, 0)
+function pickKind(level: LevelDesign, design: GameDesign, rng: Rng): string {
+  const totalWeight = level.enemyIds.reduce((sum, id) => sum + (designEnemy(design, id)?.weight ?? 0), 0)
   let roll = rng() * totalWeight
-  for (const kind of kinds) {
-    roll -= ENEMY_SPECS[kind].weight
-    if (roll <= 0) return kind
+  for (const id of level.enemyIds) {
+    roll -= designEnemy(design, id)?.weight ?? 0
+    if (roll <= 0) return id
   }
-  return 'blob'
+  return level.enemyIds[0] ?? ''
 }
 
 function edgePosition(rng: Rng): Vec {

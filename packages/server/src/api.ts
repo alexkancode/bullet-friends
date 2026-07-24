@@ -3,6 +3,7 @@ import type { TokenIdentity, TokenVerifier } from './auth/verifier.js'
 import type { SessionTokens } from './auth/sessions.js'
 import { hashPassword, verifyPassword } from './auth/passwords.js'
 import type { Group, GroupStore, UserProfile } from './groups/store.js'
+import { sanitizeDesign } from '@bullet/core'
 
 export interface ApiDeps {
   verifier?: TokenVerifier | undefined
@@ -88,6 +89,40 @@ async function route(req: IncomingMessage, res: ServerResponse, url: string, ide
       return
     }
     sendJson(res, 200, group)
+    return
+  }
+  if (method === 'GET' && url === '/api/designs') {
+    sendJson(res, 200, await store.listDesigns(identity.userId))
+    return
+  }
+  if (method === 'POST' && url === '/api/designs') {
+    const body = await readJsonBody(req)
+    const clean = sanitizeDesign(body['design'])
+    if (!clean) {
+      sendJson(res, 400, { error: 'that design is not valid' })
+      return
+    }
+    const id = typeof body['id'] === 'string' ? body['id'] : undefined
+    const savedId = await store.saveDesign(identity.userId, clean.name, clean, id)
+    if (!savedId) {
+      sendJson(res, 403, { error: 'not your design' })
+      return
+    }
+    sendJson(res, id ? 200 : 201, { id: savedId })
+    return
+  }
+  const designPath = /^\/api\/designs\/([^/]+)$/.exec(url)
+  if (method === 'GET' && designPath) {
+    const record = await store.getDesign(designPath[1] ?? '')
+    if (!record) {
+      sendJson(res, 404, { error: 'design not found' })
+      return
+    }
+    if (record.ownerId !== identity.userId) {
+      sendJson(res, 403, { error: 'not your design' })
+      return
+    }
+    sendJson(res, 200, record)
     return
   }
   if (method === 'GET' && historyPath) {
