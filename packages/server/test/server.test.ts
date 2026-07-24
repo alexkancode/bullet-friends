@@ -59,11 +59,13 @@ async function join(ws: WebSocket, room: string, name: string): Promise<WelcomeM
 }
 
 describe('server', () => {
-  it('serves a health endpoint', async () => {
+  it('serves a health endpoint reporting the deployed commit', async () => {
     const { port } = await boot()
     const res = await fetch(`http://127.0.0.1:${port}/health`)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true })
+    const body = (await res.json()) as { ok: boolean; commit: string }
+    expect(body.ok).toBe(true)
+    expect(body.commit).toBe(process.env['COMMIT_SHA'] ?? 'unknown')
   })
 
   it('welcomes a joining player and broadcasts the roster', async () => {

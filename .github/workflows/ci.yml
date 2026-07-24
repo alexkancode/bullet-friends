@@ -27,6 +27,7 @@ jobs:
         env:
           VITE_SERVER_URL: ${{ vars.SERVER_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          VITE_COMMIT_SHA: ${{ github.sha }}
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
@@ -57,4 +58,5 @@ jobs:
             echo "::notice::RAILWAY_TOKEN secret not set - skipping server deploy. Add it in repo settings to enable."
             exit 0
           fi
+          npx -y @railway/cli@latest variables --service bullet-friends --set "COMMIT_SHA=${{ github.sha }}"
           npx -y @railway/cli@latest up --service bullet-friends --detach

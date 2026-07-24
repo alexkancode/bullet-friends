@@ -43,7 +43,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
 
   async function routeHttp(req: Parameters<typeof handleApi>[0], res: Parameters<typeof handleApi>[1]): Promise<void> {
     if (req.url === '/health') {
-      sendJson(res, 200, { ok: true })
+      sendJson(res, 200, { ok: true, commit: process.env['COMMIT_SHA'] ?? 'unknown' })
       return
     }
     if (await handleApi(req, res, { verifier: authVerifier, store: options.store, sessions: options.sessions, googleVerifier: options.googleVerifier })) return
