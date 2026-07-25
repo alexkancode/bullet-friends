@@ -520,6 +520,22 @@ body {
   border-color: var(--accent);
 }
 
+.pause-panel {
+  max-width: 360px;
+  text-align: center;
+}
+
+.pause-clock {
+  color: var(--ink-secondary);
+  margin: 0 0 18px;
+}
+
+.pause-clock span {
+  color: var(--ink-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .countdown-banner {
   position: fixed;
   top: 18%;

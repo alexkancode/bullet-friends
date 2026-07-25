@@ -26,8 +26,24 @@ export function startRun(state: GameState, design: GameDesign = defaultDesign())
   beginWave(state, 1, design)
 }
 
+export function pauseGame(state: GameState, byName: string): boolean {
+  if (state.pausedBy !== '' || (state.phase !== 'fighting' && state.phase !== 'countdown')) return false
+  state.pausedBy = byName
+  state.pausedMs = 0
+  return true
+}
+
+export function resumeGame(state: GameState): void {
+  state.pausedBy = ''
+  state.pausedMs = 0
+}
+
 export function step(state: GameState, inputs: Inputs, rng: Rng, design: GameDesign = defaultDesign()): void {
   state.tick += 1
+  if (state.pausedBy !== '') {
+    state.pausedMs += TICK_MS
+    return
+  }
   if (state.phase === 'countdown') {
     applyInputs(state, inputs)
     state.countdownMsLeft -= TICK_MS

@@ -33,7 +33,15 @@ export interface SetDesignMessage {
   design: GameDesign
 }
 
-export type ClientMessage = JoinMessage | InputMessage | StartMessage | PickGearMessage | PlayAgainMessage | SetDesignMessage
+export interface PauseMessage {
+  t: 'pause'
+}
+
+export interface ResumeMessage {
+  t: 'resume'
+}
+
+export type ClientMessage = JoinMessage | InputMessage | StartMessage | PickGearMessage | PlayAgainMessage | SetDesignMessage | PauseMessage | ResumeMessage
 
 export interface WelcomeMessage {
   t: 'welcome'
@@ -67,6 +75,6 @@ export type ServerMessage = WelcomeMessage | SnapshotMessage | RosterMessage | E
 
 export type Message = ClientMessage | ServerMessage
 
-export const CLIENT_MESSAGE_TAGS = ['join', 'input', 'start', 'pickGear', 'playAgain', 'setDesign'] as const satisfies readonly ClientMessage['t'][]
+export const CLIENT_MESSAGE_TAGS = ['join', 'input', 'start', 'pickGear', 'playAgain', 'setDesign', 'pause', 'resume'] as const satisfies readonly ClientMessage['t'][]
 
 export const SERVER_MESSAGE_TAGS = ['welcome', 'snapshot', 'roster', 'error', 'design'] as const satisfies readonly ServerMessage['t'][]

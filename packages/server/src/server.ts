@@ -98,6 +98,8 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
       if (msg.t === 'pickGear') rooms.pick(session.room, session.playerId, msg.gearId)
       if (msg.t === 'playAgain') rooms.backToLobby(session.room)
       if (msg.t === 'setDesign') rooms.setDesign(session.room, msg.design)
+      if (msg.t === 'pause') rooms.pause(session.room, session.playerId)
+      if (msg.t === 'resume') rooms.resume(session.room)
     })
 
     ws.on('close', () => {

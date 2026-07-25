@@ -14,6 +14,7 @@ import { updateHud } from './ui/hud.js'
 import { renderShop } from './ui/shop.js'
 import { renderStatsCharts } from './ui/statsCharts.js'
 import { renderHistoryTable } from './ui/historyTable.js'
+import { formatStopwatch } from './ui/stopwatch.js'
 import { nextStep } from './ui/onboarding.js'
 import type { OnboardProfile } from './ui/onboarding.js'
 import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
@@ -92,6 +93,10 @@ const ui = {
   historyTableHost: el('history-table-host'),
   historyCloseButton: el<HTMLButtonElement>('history-close-button'),
   audioToggle: el<HTMLButtonElement>('audio-toggle'),
+  pause: el('pause'),
+  pauseTitle: el('pause-title'),
+  pauseClock: el('pause-clock'),
+  resumeButton: el<HTMLButtonElement>('resume-button'),
   designSelect: el<HTMLSelectElement>('design-select'),
   studioButton: el<HTMLButtonElement>('studio-button'),
   designer: el('designer'),
@@ -384,6 +389,15 @@ ui.historyCloseButton.addEventListener('click', () => {
   ui.history.hidden = true
 })
 
+ui.resumeButton.addEventListener('click', () => socket?.send({ t: 'resume' }))
+window.addEventListener('keydown', event => {
+  if (event.code !== 'Escape' || !joined || !socket) return
+  const state = buffer.latest()
+  if (!state) return
+  if (state.pausedBy !== '') socket.send({ t: 'resume' })
+  else if (state.phase === 'fighting' || state.phase === 'countdown') socket.send({ t: 'pause' })
+})
+
 ui.playButton.addEventListener('click', () => void joinGame())
 ui.startButton.addEventListener('click', () => socket?.send({ t: 'start' }))
 ui.playAgainButton.addEventListener('click', () => socket?.send({ t: 'playAgain' }))
@@ -483,9 +497,14 @@ function syncScreens(state: GameState): void {
   } else {
     setOverlay(undefined)
   }
-  ui.countdownBanner.hidden = phase !== 'countdown'
+  ui.countdownBanner.hidden = phase !== 'countdown' || state.pausedBy !== ''
   if (phase === 'countdown') {
     ui.countdownBanner.textContent = `Wave ${state.wave + 1} in ${Math.ceil(state.countdownMsLeft / 1000)}`
+  }
+  ui.pause.hidden = state.pausedBy === ''
+  if (state.pausedBy !== '') {
+    ui.pauseTitle.textContent = `${state.pausedBy} Paused`
+    ui.pauseClock.textContent = formatStopwatch(state.pausedMs)
   }
   shownPhase = phase
 }

@@ -71,6 +71,8 @@ export interface GameState {
   wave: number
   waveMsLeft: number
   countdownMsLeft: number
+  pausedBy: string
+  pausedMs: number
   spawnCooldownMs: number
   players: PlayerState[]
   enemies: EnemyState[]
@@ -87,6 +89,8 @@ export function createGameState(): GameState {
     wave: 0,
     waveMsLeft: 0,
     countdownMsLeft: 0,
+    pausedBy: '',
+    pausedMs: 0,
     spawnCooldownMs: 0,
     players: [],
     enemies: [],

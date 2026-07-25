@@ -1,6 +1,6 @@
 import type WebSocket from 'ws'
 import type { GameDesign, GameState, Inputs, Rng } from '@bullet/core'
-import { addPlayer, createGameState, createRng, defaultDesign, pickGear, removePlayer, sanitizeDesign, startRun, step, TICK_MS } from '@bullet/core'
+import { addPlayer, createGameState, createRng, defaultDesign, findPlayer, pauseGame, pickGear, removePlayer, resumeGame, sanitizeDesign, startRun, step, TICK_MS } from '@bullet/core'
 import type { ServerMessage } from '@bullet/protocol'
 import { encodeMessage } from '@bullet/protocol'
 import type { GroupStore } from './groups/store.js'
@@ -62,6 +62,15 @@ export class RoomManager {
 
   pick(room: Room, playerId: string, gearId: string): void {
     pickGear(room.state, playerId, gearId, room.design)
+  }
+
+  pause(room: Room, playerId: string): void {
+    const player = findPlayer(room.state, playerId)
+    if (player) pauseGame(room.state, player.name)
+  }
+
+  resume(room: Room): void {
+    resumeGame(room.state)
   }
 
   setDesign(room: Room, raw: unknown): boolean {
