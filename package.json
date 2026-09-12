@@ -10,6 +10,8 @@
     "typecheck": "tsc -b && tsc --noEmit -p packages/client",
     "test": "vitest run",
     "build": "tsc -b && npm run build -w @bullet/client",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "smoke": "bash scripts/smoke.sh",
     "dev:server": "npm run dev -w @bullet/server",
     "dev:client": "npm run dev -w @bullet/client"
   },

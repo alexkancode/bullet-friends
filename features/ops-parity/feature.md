@@ -107,3 +107,23 @@ flowchart LR
     classDef http fill:#bfdbfe,stroke:#1d4ed8,color:#1e3a8a
     classDef ws fill:#fecaca,stroke:#b91c1c,color:#7f1d1d
 ```
+
+## Came up during implementation
+
+The first production smoke run surfaced a latent crash: an API handler's
+rejected promise (a network timeout reaching Google's token endpoint on the
+first Firestore call after idle) escaped the fire-and-forget HTTP router,
+Node exited, and Railway restarted the service while the edge answered 502.
+The same pattern existed in the room manager's run recording and the
+group-link step on join, so one failed Firestore write could drop every
+live room. Hardening shipped alongside ops-parity:
+
+- HTTP handler failures now answer 500 `{ error: 'server error' }` and the
+  process stays up (`handlerFailure.test.ts`).
+- The two other fire-and-forget promises log instead of crash, and boot
+  failure exits non-zero.
+- Firestore and token-exchange fetches abort after 10 seconds instead of
+  hanging for the OS connect timeout.
+- ESLint now runs the type-aware `no-floating-promises` rule on package
+  sources, with `ignoreVoid: false` for the server so `void promise` is
+  rejected where an unhandled rejection kills the process.

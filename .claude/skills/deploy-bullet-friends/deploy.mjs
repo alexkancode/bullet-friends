@@ -68,4 +68,6 @@ if (live !== head) fail('server never reported HEAD — check railway logs')
 
 console.log('\n== final verification')
 const verify = spawnSync('node', [fileURLToPath(new URL('../deploy-bullet-friends-verification/verify.mjs', import.meta.url))], { stdio: 'inherit' })
-process.exit(verify.status ?? 1)
+if (verify.status !== 0) process.exit(verify.status ?? 1)
+
+run('smoke: production', `BASE_URL=${SERVER_URL} bash scripts/smoke.sh`)

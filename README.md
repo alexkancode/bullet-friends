@@ -46,6 +46,16 @@ One-time setup:
 4. Repo Settings → Variables → Actions → add `SERVER_URL` set to the
    Railway websocket URL, e.g. `wss://bullet-friends-production.up.railway.app`.
 
+### Smoke
+
+`npm run smoke` curls the happy and unhappy paths (HTTP API and WebSocket
+handshake) against a running server, `http://localhost:8080` by default.
+Point it at production with
+`BASE_URL=https://bullet-friends-production.up.railway.app npm run smoke`.
+The deploy skill runs it automatically after verification, and `npm test`
+runs it against an in-process server. `npm run check` is the unpiped
+pre-commit gate (lint, typecheck, test, build).
+
 ## Group accounts (Google sign-in)
 
 Optional — the game plays anonymously without any of this. With it, players
