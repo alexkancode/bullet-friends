@@ -18,7 +18,7 @@ export function startFrameCapture(video: HTMLVideoElement, sendFrame: (bytes: Ui
     canvas.toBlob(
       blob => {
         if (!blob) return
-        blob.arrayBuffer().then(buffer => sendFrame(new Uint8Array(buffer)))
+        void blob.arrayBuffer().then(buffer => sendFrame(new Uint8Array(buffer)))
       },
       'image/jpeg',
       JPEG_QUALITY

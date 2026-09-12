@@ -141,7 +141,7 @@ export class RoomManager {
     }
     if (room.runRecorded || !room.groupId || !this.store) return
     room.runRecorded = true
-    void this.store.appendRun(room.groupId, buildRunRecord(room.state, this.now()))
+    this.store.appendRun(room.groupId, buildRunRecord(room.state, this.now())).catch(console.error)
   }
 
   private broadcastRoster(room: Room): void {

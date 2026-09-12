@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import type { ServerResponse } from 'node:http'
 import { WebSocketServer } from 'ws'
 import { decodeCamFrame, decodeMessage, encodeMessage, isCamFrame, isCompatible } from '@bullet/protocol'
 import type { ClientMessage } from '@bullet/protocol'
@@ -38,8 +39,13 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     res.setHeader('access-control-allow-origin', '*')
     res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS')
     res.setHeader('access-control-allow-headers', 'authorization, content-type')
-    void routeHttp(req, res)
+    routeHttp(req, res).catch(error => failRequest(res, error))
   })
+
+  function failRequest(res: ServerResponse, error: unknown): void {
+    console.error(error)
+    if (!res.headersSent) sendJson(res, 500, { error: 'server error' })
+  }
 
   async function routeHttp(req: Parameters<typeof handleApi>[0], res: Parameters<typeof handleApi>[1]): Promise<void> {
     if (req.url === '/health') {
@@ -89,7 +95,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
         session = rooms.join(msg.room, ws, msg.name.slice(0, 24))
         ws.send(encodeMessage({ t: 'welcome', playerId: session.playerId, room: session.room.code }))
         ws.send(encodeMessage({ t: 'design', design: session.room.design }))
-        if (msg.groupId && msg.idToken) void linkRoomGroup(session.room, msg.groupId, msg.idToken)
+        if (msg.groupId && msg.idToken) linkRoomGroup(session.room, msg.groupId, msg.idToken).catch(console.error)
         return
       }
       if (!session) return

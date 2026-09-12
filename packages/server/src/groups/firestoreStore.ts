@@ -19,6 +19,7 @@ interface FirestoreDocument {
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const SCOPE = 'https://www.googleapis.com/auth/datastore'
 const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const UPSTREAM_TIMEOUT_MS = 10000
 
 export class FirestoreGroupStore implements GroupStore {
   private cachedToken: { value: string; expiresAt: number } | undefined
@@ -181,6 +182,7 @@ export class FirestoreGroupStore implements GroupStore {
     const base = `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`
     const response = await fetch(`${base}${path}`, {
       method,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       headers: {
         authorization: `Bearer ${token}`,
         ...(body ? { 'content-type': 'application/json' } : {})
@@ -206,6 +208,7 @@ export class FirestoreGroupStore implements GroupStore {
     const signature = sign('RSA-SHA256', Buffer.from(unsigned), createPrivateKey(this.serviceAccount.private_key)).toString('base64url')
     const response = await fetch(TOKEN_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${unsigned}.${signature}`
     })

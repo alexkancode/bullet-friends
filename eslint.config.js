@@ -16,6 +16,19 @@ export default tseslint.config(
     }
   },
   {
+    files: ['packages/*/src/**/*.ts'],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error'
+    }
+  },
+  {
+    files: ['packages/server/src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }]
+    }
+  },
+  {
     files: ['**/test/**'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',

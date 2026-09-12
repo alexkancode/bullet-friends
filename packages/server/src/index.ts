@@ -20,6 +20,10 @@ function buildStore(): GroupStore {
   return new MemoryGroupStore()
 }
 
-startServer({ port, sessions, ...(googleVerifier ? { googleVerifier } : {}), store: buildStore() }).then(running => {
-  console.log(`bullet-friends server listening on :${running.port}`)
-})
+startServer({ port, sessions, ...(googleVerifier ? { googleVerifier } : {}), store: buildStore() }).then(
+  running => console.log(`bullet-friends server listening on :${running.port}`),
+  error => {
+    console.error(error)
+    process.exit(1)
+  }
+)
