@@ -19,8 +19,11 @@ The pipeline it executes, stopping at the first failure:
 4. Polls the CI run for HEAD until it concludes (Pages deploys in that run).
 5. Sets `COMMIT_SHA` on the Railway service and runs `railway up`.
 6. Polls the production health endpoint until it reports HEAD.
-7. Chains into `deploy-bullet-friends-verification` for the final verdict.
-8. Runs `scripts/smoke.sh` against production (HTTP and WebSocket happy and
+7. Polls `railway deployment list --json` until only the new deployment
+   is live, so verification and smoke cannot land on the draining
+   instance during Railway's rollout overlap.
+8. Chains into `deploy-bullet-friends-verification` for the final verdict.
+9. Runs `scripts/smoke.sh` against production (HTTP and WebSocket happy and
    unhappy paths).
 
 Exit 0 means production is verifiably running HEAD and passes smoke. Do not hand-roll these

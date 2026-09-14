@@ -34,9 +34,9 @@ function nextMessage(ws, tag) {
   })
 }
 
-function nextSnapshot(ws, check) {
+function nextSnapshot(ws, label, check) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timed out waiting for snapshot')), TIMEOUT_MS)
+    const timer = setTimeout(() => reject(new Error(`[${label}] timed out waiting for snapshot`)), TIMEOUT_MS)
     const onMessage = event => {
       if (typeof event.data !== 'string') return
       const msg = JSON.parse(event.data)
@@ -104,7 +104,7 @@ async function checkLeaveEndsSoloRun(url) {
   ws.send(joinMessage('SOLO', 'Smoke Solo'))
   await welcome
   ws.send(JSON.stringify({ t: 'start' }))
-  const over = nextSnapshot(ws, state => state.phase === 'runOver')
+  const over = nextSnapshot(ws, 'ws leave as last player ends the run', state => state.phase === 'runOver')
   ws.send(JSON.stringify({ t: 'leave' }))
   const state = await over
   expectEqual('ws leave as last player ends the run', state.players.length, 1)
@@ -115,7 +115,7 @@ async function checkLeaveEndsSoloRun(url) {
 async function checkLeaveWithOthers(url) {
   const leaver = await connect(url)
   const stayer = await connect(url)
-  const both = nextSnapshot(stayer, state => state.players.length === 2)
+  const both = nextSnapshot(stayer, 'ws leave with others sees both players', state => state.players.length === 2)
   leaver.send(joinMessage('PAIR', 'Smoke Leaver'))
   stayer.send(joinMessage('PAIR', 'Smoke Stayer'))
   await both

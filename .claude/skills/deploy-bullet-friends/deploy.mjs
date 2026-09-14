@@ -1,10 +1,12 @@
 import { execFileSync, execSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { rolloutSettled } from './rollout.mjs'
 
 const REPO = 'alexkancode/bullet-friends'
 const SERVER_URL = 'https://bullet-friends-production.up.railway.app'
 const CI_TIMEOUT_MS = 8 * 60 * 1000
 const HEALTH_TIMEOUT_MS = 6 * 60 * 1000
+const ROLLOUT_TIMEOUT_MS = 5 * 60 * 1000
 
 function run(label, command) {
   console.log(`\n== ${label}`)
@@ -65,6 +67,20 @@ while (Date.now() < healthDeadline) {
   if (live === head) break
 }
 if (live !== head) fail('server never reported HEAD — check railway logs')
+
+console.log('\n== waiting for the previous deployment to drain')
+const rolloutDeadline = Date.now() + ROLLOUT_TIMEOUT_MS
+let settled = false
+while (Date.now() < rolloutDeadline) {
+  const deployments = JSON.parse(
+    execFileSync('railway', ['deployment', 'list', '--service', 'bullet-friends', '--json', '--limit', '5'], { encoding: 'utf8' })
+  )
+  process.stdout.write(`  deployments: ${deployments.map(d => d.status).join(', ')}\n`)
+  settled = rolloutSettled(deployments)
+  if (settled) break
+  await sleep(10000)
+}
+if (!settled) fail('previous deployment never drained — check railway deployment list')
 
 console.log('\n== final verification')
 const verify = spawnSync('node', [fileURLToPath(new URL('../deploy-bullet-friends-verification/verify.mjs', import.meta.url))], { stdio: 'inherit' })
