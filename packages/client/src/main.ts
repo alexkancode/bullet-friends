@@ -16,6 +16,7 @@ import { renderStatsCharts } from './ui/statsCharts.js'
 import { renderHistoryTable } from './ui/historyTable.js'
 import { formatStopwatch } from './ui/stopwatch.js'
 import { nextStep } from './ui/onboarding.js'
+import { statsExit } from './ui/leave.js'
 import type { OnboardProfile } from './ui/onboarding.js'
 import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
 import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
@@ -97,6 +98,7 @@ const ui = {
   pauseTitle: el('pause-title'),
   pauseClock: el('pause-clock'),
   resumeButton: el<HTMLButtonElement>('resume-button'),
+  leaveButton: el<HTMLButtonElement>('leave-button'),
   designSelect: el<HTMLSelectElement>('design-select'),
   studioButton: el<HTMLButtonElement>('studio-button'),
   designer: el('designer'),
@@ -128,6 +130,7 @@ let profile: OnboardProfile | undefined
 let myGroups: ApiGroup[] = []
 let activeGroup: ApiGroup | undefined
 let joined = false
+let leaveRequested = false
 let socket: GameSocket | undefined
 let selfId: string | undefined
 let cameraStarted = false
@@ -390,6 +393,10 @@ ui.historyCloseButton.addEventListener('click', () => {
 })
 
 ui.resumeButton.addEventListener('click', () => socket?.send({ t: 'resume' }))
+ui.leaveButton.addEventListener('click', () => {
+  leaveRequested = true
+  socket?.send({ t: 'leave' })
+})
 window.addEventListener('keydown', event => {
   if (event.code !== 'Escape' || !joined || !socket) return
   const state = buffer.latest()
@@ -400,7 +407,10 @@ window.addEventListener('keydown', event => {
 
 ui.playButton.addEventListener('click', () => void joinGame())
 ui.startButton.addEventListener('click', () => socket?.send({ t: 'start' }))
-ui.playAgainButton.addEventListener('click', () => socket?.send({ t: 'playAgain' }))
+ui.playAgainButton.addEventListener('click', () => {
+  if (statsExit(leaveRequested).action === 'disconnect') socket?.close()
+  else socket?.send({ t: 'playAgain' })
+})
 
 async function joinGame(): Promise<void> {
   if (!profile || !activeGroup || !sessionToken) return
@@ -413,6 +423,7 @@ async function joinGame(): Promise<void> {
         if (msg.t === 'welcome') {
           selfId = msg.playerId
           joined = true
+          leaveRequested = false
           renderFlow()
         }
         if (msg.t === 'design') currentDesign = msg.design
@@ -429,7 +440,10 @@ async function joinGame(): Promise<void> {
         joined = false
         selfId = undefined
         ui.playButton.disabled = false
-        ui.groupNote.textContent = 'Disconnected from server'
+        ui.groupNote.textContent = leaveRequested ? '' : 'Disconnected from server'
+        leaveRequested = false
+        shownPhase = 'none'
+        setOverlay(ui.lobby)
         renderFlow()
       }
     })
@@ -490,6 +504,7 @@ function syncScreens(state: GameState): void {
     setOverlay(ui.shop)
   } else if (phase === 'runOver') {
     if (shownPhase !== phase) renderStatsCharts(ui.statsLegend, ui.statsCharts, ui.statsTable, state.players)
+    ui.playAgainButton.textContent = statsExit(leaveRequested).label
     setOverlay(ui.stats)
   } else if (phase === 'lobby') {
     renderRoster(state)

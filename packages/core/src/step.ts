@@ -38,6 +38,13 @@ export function resumeGame(state: GameState): void {
   state.pausedMs = 0
 }
 
+export function abandonRun(state: GameState): boolean {
+  if (state.phase !== 'fighting' && state.phase !== 'shopping' && state.phase !== 'countdown') return false
+  resumeGame(state)
+  endRun(state)
+  return true
+}
+
 export function step(state: GameState, inputs: Inputs, rng: Rng, design: GameDesign = defaultDesign()): void {
   state.tick += 1
   if (state.pausedBy !== '') {

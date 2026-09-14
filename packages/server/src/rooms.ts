@@ -1,6 +1,6 @@
 import type WebSocket from 'ws'
 import type { GameDesign, GameState, Inputs, Rng } from '@bullet/core'
-import { addPlayer, createGameState, createRng, defaultDesign, findPlayer, pauseGame, pickGear, removePlayer, resumeGame, sanitizeDesign, startRun, step, TICK_MS } from '@bullet/core'
+import { abandonRun, addPlayer, createGameState, createRng, defaultDesign, findPlayer, pauseGame, pickGear, removePlayer, resumeGame, sanitizeDesign, startRun, step, TICK_MS } from '@bullet/core'
 import type { ServerMessage } from '@bullet/protocol'
 import { encodeMessage } from '@bullet/protocol'
 import type { GroupStore } from './groups/store.js'
@@ -17,6 +17,8 @@ export interface Room {
   runRecorded: boolean
   design: GameDesign
 }
+
+export type LeaveOutcome = 'runOver' | 'left'
 
 export class RoomManager {
   private readonly rooms = new Map<string, Room>()
@@ -48,6 +50,11 @@ export class RoomManager {
       return
     }
     this.broadcastRoster(room)
+  }
+
+  leaveRun(room: Room, playerId: string): LeaveOutcome {
+    const alone = room.state.players.length === 1 && findPlayer(room.state, playerId) !== undefined
+    return alone && abandonRun(room.state) ? 'runOver' : 'left'
   }
 
   setInput(room: Room, playerId: string, move: { x: number; y: number }): void {

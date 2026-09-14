@@ -34,6 +34,21 @@ function nextMessage(ws, tag) {
   })
 }
 
+function nextSnapshot(ws, check) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timed out waiting for snapshot')), TIMEOUT_MS)
+    const onMessage = event => {
+      if (typeof event.data !== 'string') return
+      const msg = JSON.parse(event.data)
+      if (msg.t !== 'snapshot' || !check(msg.state)) return
+      clearTimeout(timer)
+      ws.removeEventListener('message', onMessage)
+      resolve(msg.state)
+    }
+    ws.addEventListener('message', onMessage)
+  })
+}
+
 function closed(ws) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('socket stayed open')), TIMEOUT_MS)
@@ -79,10 +94,46 @@ async function checkJoin(url) {
   ws.close()
 }
 
+function joinMessage(room, name) {
+  return JSON.stringify({ t: 'join', room, name, protocolVersion: SMOKE_PROTOCOL_VERSION })
+}
+
+async function checkLeaveEndsSoloRun(url) {
+  const ws = await connect(url)
+  const welcome = nextMessage(ws, 'welcome')
+  ws.send(joinMessage('SOLO', 'Smoke Solo'))
+  await welcome
+  ws.send(JSON.stringify({ t: 'start' }))
+  const over = nextSnapshot(ws, state => state.phase === 'runOver')
+  ws.send(JSON.stringify({ t: 'leave' }))
+  const state = await over
+  expectEqual('ws leave as last player ends the run', state.players.length, 1)
+  expectEqual('ws leave as last player keeps the socket open', ws.readyState, WebSocket.OPEN)
+  ws.close()
+}
+
+async function checkLeaveWithOthers(url) {
+  const leaver = await connect(url)
+  const stayer = await connect(url)
+  const both = nextSnapshot(stayer, state => state.players.length === 2)
+  leaver.send(joinMessage('PAIR', 'Smoke Leaver'))
+  stayer.send(joinMessage('PAIR', 'Smoke Stayer'))
+  await both
+  const gone = closed(leaver)
+  const roster = nextMessage(stayer, 'roster')
+  leaver.send(JSON.stringify({ t: 'leave' }))
+  await gone
+  expectEqual('ws leave with others closes the leaver', leaver.readyState, WebSocket.CLOSED)
+  expectEqual('ws leave with others shrinks the roster', (await roster).players.length, 1)
+  stayer.close()
+}
+
 export async function probe(url) {
   await checkBadMessage(url)
   await checkVersionMismatch(url)
   await checkJoin(url)
+  await checkLeaveEndsSoloRun(url)
+  await checkLeaveWithOthers(url)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

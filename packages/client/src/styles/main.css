@@ -536,6 +536,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.pause-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pause-actions .button {
+  flex: 1;
+  margin-top: 0;
+}
+
 .countdown-banner {
   position: fixed;
   top: 18%;

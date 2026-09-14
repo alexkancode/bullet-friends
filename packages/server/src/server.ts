@@ -106,6 +106,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
       if (msg.t === 'setDesign') rooms.setDesign(session.room, msg.design)
       if (msg.t === 'pause') rooms.pause(session.room, session.playerId)
       if (msg.t === 'resume') rooms.resume(session.room)
+      if (msg.t === 'leave' && rooms.leaveRun(session.room, session.playerId) === 'left') ws.close()
     })
 
     ws.on('close', () => {

@@ -103,6 +103,6 @@ request GET /nope 404 "unknown path"
 
 echo "--- websocket against $WS_URL"
 node "$SCRIPT_DIR/ws-probe.mjs" "$WS_URL"
-PASS_COUNT=$((PASS_COUNT + 6))
+PASS_COUNT=$((PASS_COUNT + 10))
 
 echo "SMOKE PASSED ($PASS_COUNT checks)"

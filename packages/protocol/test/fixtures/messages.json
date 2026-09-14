@@ -139,5 +139,8 @@
   },
   "resume": {
     "t": "resume"
+  },
+  "leave": {
+    "t": "leave"
   }
 }
