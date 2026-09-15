@@ -1,0 +1,169 @@
+{
+  "scenario": "light",
+  "throttle": 1,
+  "seconds": 15,
+  "bots": 0,
+  "frames": {
+    "count": 900,
+    "fps": 60,
+    "meanMs": 16.65,
+    "p50Ms": 16.7,
+    "p95Ms": 16.7,
+    "p99Ms": 16.8,
+    "maxMs": 16.8,
+    "over16ms": 358,
+    "over33ms": 0
+  },
+  "entities": {
+    "snapshots": 298,
+    "enemiesMean": 4,
+    "enemiesMax": 6,
+    "projectilesMean": 2,
+    "orbsMean": 7,
+    "players": 1,
+    "snapshotKbMean": 1.9,
+    "snapshotKbPerSecond": 37.3
+  },
+  "budget": {
+    "scriptMsPerFrame": 3.82,
+    "styleMsPerFrame": 0.18,
+    "layoutMsPerFrame": 0.21,
+    "taskMsPerFrame": 6.35,
+    "jsonParseMsPerFrame": 0.02,
+    "bitmapMsPerFrame": 0
+  },
+  "json": {
+    "count": 298,
+    "ms": 20.2,
+    "bytes": 572560,
+    "kb": 559.1
+  },
+  "bitmaps": {
+    "count": 0,
+    "ms": 0
+  },
+  "drawCallsPerFrame": {
+    "beginPath": 41.8,
+    "stroke": 24,
+    "arc": 18.8,
+    "fill": 16.8,
+    "createRadialGradient": 6.5,
+    "drawImage": 5.3,
+    "fillRect": 5,
+    "save": 2,
+    "restore": 2,
+    "translate": 1,
+    "scale": 1,
+    "clip": 1,
+    "fillText": 1
+  },
+  "hotFunctions": [
+    {
+      "name": "(idle) · :0",
+      "ms": 9499.62
+    },
+    {
+      "name": "drawImage · :0",
+      "ms": 2857.59
+    },
+    {
+      "name": "(program) · :0",
+      "ms": 2175.26
+    },
+    {
+      "name": "arrayBuffer · :0",
+      "ms": 44.82
+    },
+    {
+      "name": "updateHud · index-CP-kdGvN.js:1511",
+      "ms": 41.74
+    },
+    {
+      "name": "drawPlayer · index-CP-kdGvN.js:1389",
+      "ms": 39.77
+    },
+    {
+      "name": "(garbage collector) · :0",
+      "ms": 31.09
+    },
+    {
+      "name": "send · :0",
+      "ms": 27.73
+    },
+    {
+      "name": "fill · :0",
+      "ms": 25.77
+    },
+    {
+      "name": "JSON.parse · :22",
+      "ms": 23.25
+    },
+    {
+      "name": "proto.<computed> · :53",
+      "ms": 22.41
+    },
+    {
+      "name": "frame · index-CP-kdGvN.js:3085",
+      "ms": 20.45
+    },
+    {
+      "name": "setProperty · :0",
+      "ms": 15.97
+    },
+    {
+      "name": "requestAnimationFrame · :0",
+      "ms": 15.69
+    },
+    {
+      "name": "renderBuild · index-CP-kdGvN.js:1522",
+      "ms": 13.16
+    },
+    {
+      "name": "fillText · :0",
+      "ms": 12.88
+    },
+    {
+      "name": "drawArena · index-CP-kdGvN.js:1333",
+      "ms": 11.76
+    },
+    {
+      "name": "stroke · :0",
+      "ms": 11.48
+    }
+  ],
+  "allocators": [
+    {
+      "name": "JSON.parse · :22",
+      "kb": 20.1
+    },
+    {
+      "name": "innerSerialize · :186",
+      "kb": 15.3
+    },
+    {
+      "name": "tick · :14",
+      "kb": 10.1
+    },
+    {
+      "name": "push · index-CP-kdGvN.js:964",
+      "kb": 4
+    },
+    {
+      "name": "isURL · :50",
+      "kb": 4
+    },
+    {
+      "name": "keys · :0",
+      "kb": 4
+    },
+    {
+      "name": "proto.<computed> · :53",
+      "kb": 4
+    },
+    {
+      "name": "renderShop · index-CP-kdGvN.js:1546",
+      "kb": 4
+    }
+  ],
+  "allocatedKbTotal": 65.5
+}

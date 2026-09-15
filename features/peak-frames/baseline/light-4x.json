@@ -1,0 +1,186 @@
+{
+  "scenario": "light",
+  "throttle": 4,
+  "seconds": 15,
+  "bots": 0,
+  "frames": {
+    "count": 894,
+    "fps": 59.6,
+    "meanMs": 16.8,
+    "p50Ms": 16.7,
+    "p95Ms": 16.7,
+    "p99Ms": 16.8,
+    "maxMs": 50.1,
+    "over16ms": 356,
+    "over33ms": 2
+  },
+  "entities": {
+    "snapshots": 299,
+    "enemiesMean": 4,
+    "enemiesMax": 6,
+    "projectilesMean": 2,
+    "orbsMean": 6,
+    "players": 1,
+    "phases": {
+      "fighting": 281,
+      "shopping": 9,
+      "countdown": 9
+    },
+    "snapshotKbMean": 1.9,
+    "snapshotKbPerSecond": 37.1
+  },
+  "budget": {
+    "scriptMsPerFrame": 3.61,
+    "styleMsPerFrame": 0.49,
+    "layoutMsPerFrame": 0.6,
+    "taskMsPerFrame": 8.48,
+    "jsonParseMsPerFrame": 0.05,
+    "bitmapMsPerFrame": 0
+  },
+  "json": {
+    "count": 299,
+    "ms": 48.4,
+    "bytes": 570153,
+    "kb": 556.8
+  },
+  "bitmaps": {
+    "count": 0,
+    "ms": 0
+  },
+  "drawCallsPerFrame": {
+    "beginPath": 41.7,
+    "stroke": 24,
+    "arc": 18.6,
+    "fill": 16.6,
+    "createRadialGradient": 6.5,
+    "drawImage": 5.3,
+    "fillRect": 5,
+    "save": 2,
+    "restore": 2,
+    "translate": 1,
+    "scale": 1,
+    "clip": 1,
+    "fillText": 1
+  },
+  "hotFunctions": [
+    {
+      "name": "(idle) · :0",
+      "ms": 7422.5
+    },
+    {
+      "name": "(program) · :0",
+      "ms": 4554.91
+    },
+    {
+      "name": "drawImage · :0",
+      "ms": 1135.5
+    },
+    {
+      "name": "toBlob · :0",
+      "ms": 581.36
+    },
+    {
+      "name": "updateHud · index-CP-kdGvN.js:1511",
+      "ms": 124.12
+    },
+    {
+      "name": "arrayBuffer · :0",
+      "ms": 104.28
+    },
+    {
+      "name": "drawPlayer · index-CP-kdGvN.js:1389",
+      "ms": 82.13
+    },
+    {
+      "name": "send · :0",
+      "ms": 70.13
+    },
+    {
+      "name": "fill · :0",
+      "ms": 65.98
+    },
+    {
+      "name": "frame · index-CP-kdGvN.js:3085",
+      "ms": 58.14
+    },
+    {
+      "name": "JSON.parse · :22",
+      "ms": 57.67
+    },
+    {
+      "name": "(garbage collector) · :0",
+      "ms": 56.75
+    },
+    {
+      "name": "proto.<computed> · :55",
+      "ms": 54.91
+    },
+    {
+      "name": "requestAnimationFrame · :0",
+      "ms": 53.98
+    },
+    {
+      "name": "setProperty · :0",
+      "ms": 51.68
+    },
+    {
+      "name": "fillRect · :0",
+      "ms": 40.14
+    },
+    {
+      "name": "fillText · :0",
+      "ms": 36.45
+    },
+    {
+      "name": "drawScene · index-CP-kdGvN.js:1316",
+      "ms": 35.99
+    }
+  ],
+  "allocators": [
+    {
+      "name": "JSON.parse · :22",
+      "kb": 28.1
+    },
+    {
+      "name": "innerSerialize · :186",
+      "kb": 16.8
+    },
+    {
+      "name": "tick · :14",
+      "kb": 10.1
+    },
+    {
+      "name": "isURL · :50",
+      "kb": 8.2
+    },
+    {
+      "name": "proto.<computed> · :55",
+      "kb": 8.1
+    },
+    {
+      "name": "renderBuild · index-CP-kdGvN.js:1522",
+      "kb": 4.2
+    },
+    {
+      "name": "(anonymous) · :1",
+      "kb": 4
+    },
+    {
+      "name": "push · index-CP-kdGvN.js:964",
+      "kb": 4
+    },
+    {
+      "name": "evaluate · :305",
+      "kb": 4
+    },
+    {
+      "name": "fitToBand · index-CP-kdGvN.js:1304",
+      "kb": 4
+    },
+    {
+      "name": "keys · :0",
+      "kb": 4
+    }
+  ],
+  "allocatedKbTotal": 95.5
+}

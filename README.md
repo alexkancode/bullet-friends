@@ -56,6 +56,24 @@ The deploy skill runs it automatically after verification, and `npm test`
 runs it against an in-process server. `npm run check` is the unpiped
 pre-commit gate (lint, typecheck, test, build).
 
+### Frame performance probe
+
+`tools/perf-probe.mjs` drives the real client in headless Chromium against a
+running local server and reports frame times, draw calls, JS self time and
+allocation. It needs a local server on 8080, the built client served on 4173
+(`npx vite preview --port 4173` in `packages/client`), and a Playwright
+install, which is not a dependency of this repo:
+
+```bash
+PLAYWRIGHT_PATH=/path/to/node_modules/playwright \
+  node tools/perf-probe.mjs --scenario heavy --throttle 4 --seconds 15 --gpu 1
+```
+
+Scenarios are `light` and `heavy`; `--gpu 1` enables hardware rasterization,
+without which draw costs roughly double. Build the client with
+`npx vite build --minify false` first if you want readable function names in
+the profile. Baseline results and the analysis live in `features/peak-frames/`.
+
 ## Group accounts (Google sign-in)
 
 Optional — the game plays anonymously without any of this. With it, players
