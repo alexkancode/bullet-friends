@@ -15,9 +15,9 @@ import { renderShop } from './ui/shop.js'
 import { renderStatsCharts } from './ui/statsCharts.js'
 import { renderHistoryTable } from './ui/historyTable.js'
 import { formatStopwatch } from './ui/stopwatch.js'
-import { nextStep } from './ui/onboarding.js'
+import { nextStep, selectGroup } from './ui/onboarding.js'
 import { statsExit } from './ui/leave.js'
-import type { OnboardProfile } from './ui/onboarding.js'
+import type { GroupSelectReason, OnboardProfile } from './ui/onboarding.js'
 import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
 import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
 import { apiBaseFromWsUrl, createGroupApi, ApiError } from './net/api.js'
@@ -259,13 +259,12 @@ async function afterAuth(): Promise<void> {
   renderFlow()
 }
 
-async function refreshGroups(): Promise<void> {
+async function refreshGroups(reason: GroupSelectReason = 'load'): Promise<void> {
   const me = await groupApi.me()
   profile = me.profile
   myGroups = me.groups
   void refreshDesigns()
-  if (activeGroup) activeGroup = myGroups.find(g => g.id === activeGroup?.id) ?? activeGroup
-  if (myGroups.length === 1 && !activeGroup) activeGroup = myGroups[0]
+  activeGroup = selectGroup(myGroups, activeGroup, reason)
 }
 
 async function restoreSession(): Promise<void> {
@@ -358,8 +357,7 @@ ui.groupCreateButton.addEventListener('click', () => {
 })
 
 ui.switchGroupButton.addEventListener('click', () => {
-  activeGroup = undefined
-  void refreshGroups().then(renderFlow)
+  void refreshGroups('switch').then(renderFlow)
 })
 
 ui.inviteButton.addEventListener('click', () => {

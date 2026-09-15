@@ -12,3 +12,11 @@ export function nextStep(profile: OnboardProfile | undefined, hasActiveGroup: bo
   if (profile.camConsent === undefined) return 'consent'
   return hasActiveGroup ? 'ready' : 'group'
 }
+
+export type GroupSelectReason = 'load' | 'switch'
+
+export function selectGroup<T extends { id: string }>(groups: T[], current: T | undefined, reason: GroupSelectReason): T | undefined {
+  if (reason === 'switch') return undefined
+  if (current) return groups.find(g => g.id === current.id) ?? current
+  return groups.length === 1 ? groups[0] : undefined
+}

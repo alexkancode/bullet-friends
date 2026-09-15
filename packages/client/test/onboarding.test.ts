@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextStep } from '../src/ui/onboarding.js'
+import { nextStep, selectGroup } from '../src/ui/onboarding.js'
 
 const profile = (camConsent?: boolean) => ({ userId: 'u1', name: 'Spud', email: 's@e.com', ...(camConsent === undefined ? {} : { camConsent }) })
 
@@ -24,5 +24,31 @@ describe('nextStep', () => {
 
   it('never skips consent even with an active group', () => {
     expect(nextStep(profile(), true)).toBe('consent')
+  })
+})
+
+const g = (id: string) => ({ id, name: `Group ${id}` })
+
+describe('selectGroup', () => {
+  it('auto-selects a lone group on load', () => {
+    expect(selectGroup([g('a')], undefined, 'load')).toEqual(g('a'))
+  })
+
+  it('leaves the choice open when there are several groups on load', () => {
+    expect(selectGroup([g('a'), g('b')], undefined, 'load')).toBeUndefined()
+  })
+
+  it('keeps the current group on load, using the fresh copy from the list', () => {
+    const fresh = { id: 'a', name: 'Renamed' }
+    expect(selectGroup([fresh, g('b')], g('a'), 'load')).toBe(fresh)
+  })
+
+  it('keeps the current group on load even before the list catches up', () => {
+    expect(selectGroup([g('b')], g('a'), 'load')).toEqual(g('a'))
+  })
+
+  it('selects nothing on an explicit switch, even with a lone group', () => {
+    expect(selectGroup([g('a')], g('a'), 'switch')).toBeUndefined()
+    expect(selectGroup([g('a')], undefined, 'switch')).toBeUndefined()
   })
 })
