@@ -13,7 +13,7 @@ Agreed in conversation on 2026-09-14, after playing in production.
   shop never re-offers an owned item, so no build can stack anything and
   the shop runs dry after eight picks.
 - Pickup is made substantial: Monocle becomes times 1.5 per copy,
-  compounding. One copy 135 px, two 202 px, three 304 px. Core integration
+  compounding. One copy 135 px, two 203 px, three 304 px. Core integration
   tests simulate orb pickup at fixed distances to lock the effect.
 - Items stack: the shop may re-offer owned items, each roll still shows
   three different items, every copy applies its modifiers again (flat adds,
@@ -30,7 +30,7 @@ xychart-beta
     title "Pickup radius (px) by Monocle copies"
     x-axis ["0", "1", "2", "3", "4"]
     y-axis "radius px" 0 --> 500
-    bar [90, 135, 202, 304, 456]
+    bar [90, 135, 203, 304, 456]
 ```
 
 ## Stacking Flow
@@ -40,10 +40,10 @@ flowchart LR
     W[wave ends]:::calm --> R[rollOffers: 3 distinct items<br/>from the whole design]:::pick
     R --> P[player picks Monocle again]:::pick
     P --> G[gear list: monocle, monocle]:::stack
-    G --> S[computeStats: 90 x1.5 x1.5 = 202]:::stack
-    S --> C[collectOrbs uses 202 px]:::hot
+    G --> S[computeStats: 90 x1.5 x1.5 = 203]:::stack
+    S --> C[collectOrbs uses 203 px]:::hot
     G --> D[scene draws unique items once]:::calm
-    G --> B[build panel: Monocle x2<br/>Pickup Range 202 x2.25]:::panel
+    G --> B[build panel: Monocle x2<br/>Pickup Range 203 x2.25]:::panel
 
     classDef calm fill:#e5e7eb,stroke:#6b7280,color:#111827
     classDef pick fill:#fde68a,stroke:#b45309,color:#78350f

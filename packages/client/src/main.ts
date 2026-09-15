@@ -115,7 +115,9 @@ const hudElements = {
   hpFill: el('hud-hp-fill'),
   hpLabel: el('hud-hp-label'),
   xpFill: el('hud-xp-fill'),
-  levelLabel: el('hud-level')
+  levelLabel: el('hud-level'),
+  buildItems: el('hud-build-items'),
+  buildStats: el('hud-build-stats')
 }
 
 const sprites = new SpriteStore(ART_BASE)

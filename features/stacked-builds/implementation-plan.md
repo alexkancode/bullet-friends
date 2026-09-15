@@ -48,7 +48,7 @@
 
 Local build, sign up, create a group, start a run alone, survive to the
 shop, pick Monocle whenever offered. Screenshot the arena with the build
-panel showing "Monocle x2" and "Pickup Range 202 (x2.25)". Check the
+panel showing "Monocle x2" and "Pickup Range 203 (x2.25)". Check the
 panel sits on the left, does not overlap the HUD bars, and stays readable
 over the arena. Grep the built HTML for `hud-build`.
 

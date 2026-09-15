@@ -133,7 +133,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   ctx.arc(x, y, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  for (const gearId of player.gear) drawGear(ctx, deps, gearId, x, y, r)
+  for (const gearId of new Set(player.gear)) drawGear(ctx, deps, gearId, x, y, r)
 
   ctx.fillStyle = INK.secondary
   ctx.font = '600 16px system-ui, sans-serif'

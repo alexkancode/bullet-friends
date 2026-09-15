@@ -2,14 +2,7 @@ import type { GameDesign, GameState } from '@bullet/core'
 import { designGear } from '@bullet/core'
 import type { GearModifier } from '@bullet/core'
 import { artUrl } from '../render/sprites.js'
-
-const STAT_LABELS = {
-  maxHp: 'Max HP',
-  damage: 'Damage',
-  fireRateMs: 'Attack Speed',
-  moveSpeed: 'Move Speed',
-  pickupRadius: 'Pickup Range'
-}
+import { STAT_LABELS } from './statLabels.js'
 
 export function describeModifier(mod: GearModifier): string {
   const label = STAT_LABELS[mod.stat]

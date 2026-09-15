@@ -15,12 +15,23 @@ describe('gear', () => {
     expect(GEAR_CATALOG.find(g => g.id === 'pipe')?.slot).toBe('mouth')
   })
 
-  it('rolls three distinct offers excluding owned gear', () => {
-    const owned = [GEAR_CATALOG[0]!.id]
-    const offers = rollOffers(createRng(3), owned)
+  it('rolls three distinct offers from the whole catalog', () => {
+    const offers = rollOffers(createRng(3))
     expect(offers.length).toBe(3)
     expect(new Set(offers).size).toBe(3)
-    expect(offers).not.toContain(owned[0])
+  })
+
+  it('can offer an item the player already owns', () => {
+    const seen = new Set<string>()
+    for (let seed = 0; seed < 40; seed++) rollOffers(createRng(seed)).forEach(id => seen.add(id))
+    expect(seen.has(GEAR_CATALOG[0]!.id)).toBe(true)
+  })
+
+  it('stacks copies of the same item', () => {
+    expect(computeStats(1, ['top-hat', 'top-hat']).maxHp).toBe(BASE_STATS.maxHp + 50)
+    const once = computeStats(1, ['laser-glasses']).damage
+    const twice = computeStats(1, ['laser-glasses', 'laser-glasses']).damage
+    expect(twice / once).toBeCloseTo(1.3, 5)
   })
 
   it('applies multiplicative and flat modifiers to stats', () => {

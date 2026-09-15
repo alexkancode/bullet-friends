@@ -436,6 +436,45 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.hud-build {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.hud-build ul {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(13, 13, 13, 0.6);
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  color: var(--ink-secondary);
+}
+
+.hud-build ul:empty {
+  display: none;
+}
+
+.hud-build li + li {
+  margin-top: 4px;
+}
+
+.hud-build-items li {
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+.hud-build-changed {
+  color: var(--ink-primary);
+}
+
 .meter {
   height: 10px;
   border-radius: 5px;

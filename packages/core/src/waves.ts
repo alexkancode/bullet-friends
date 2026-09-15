@@ -50,7 +50,7 @@ function endWave(state: GameState, rng: Rng, design: GameDesign): void {
       player.hp = player.stats.maxHp / 2
     }
   }
-  const rolled: [string, string[]][] = state.players.map(p => [p.id, rollOffers(rng, p.gear, design.gear)])
+  const rolled: [string, string[]][] = state.players.map(p => [p.id, rollOffers(rng, design.gear)])
   state.pendingOffers = Object.fromEntries(rolled.filter(([, offers]) => offers.length > 0))
   if (Object.keys(state.pendingOffers).length === 0) {
     state.phase = 'countdown'
