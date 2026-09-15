@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { TokenIdentity } from '../auth/verifier.js'
 import type { DesignRecord, DesignSummary, Group, GroupStore, RunRecord, UserProfile } from './store.js'
+import { PUBLIC_GROUP_LIST_LIMIT } from './store.js'
 
 const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -94,9 +95,31 @@ export class MemoryGroupStore implements GroupStore {
     const group = this.groups.get(groupId)
     if (!group) return undefined
     this.invites.delete(code)
+    await this.addMember(group, user)
+    return group
+  }
+
+  setGroupVisibility(groupId: string, isPublic: boolean): Promise<void> {
+    const group = this.groups.get(groupId)
+    if (group) group.isPublic = isPublic
+    return Promise.resolve()
+  }
+
+  listPublicGroups(): Promise<Group[]> {
+    const open = [...this.groups.values()].filter(g => g.isPublic === true)
+    return Promise.resolve(open.sort((a, b) => b.createdAt - a.createdAt).slice(0, PUBLIC_GROUP_LIST_LIMIT))
+  }
+
+  async joinGroup(groupId: string, user: TokenIdentity): Promise<Group | undefined> {
+    const group = this.groups.get(groupId)
+    if (!group?.isPublic) return undefined
+    await this.addMember(group, user)
+    return group
+  }
+
+  private async addMember(group: Group, user: TokenIdentity): Promise<void> {
     await this.upsertUser(user)
     if (!group.memberIds.includes(user.userId)) group.memberIds.push(user.userId)
-    return group
   }
 
   appendRun(groupId: string, run: RunRecord): Promise<void> {

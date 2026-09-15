@@ -45,6 +45,8 @@ async function route(req: IncomingMessage, res: ServerResponse, url: string, ide
   const invitePath = /^\/api\/groups\/([^/]+)\/invites$/.exec(url)
   const acceptPath = /^\/api\/invites\/([^/]+)\/accept$/.exec(url)
   const historyPath = /^\/api\/groups\/([^/]+)\/history$/.exec(url)
+  const visibilityPath = /^\/api\/groups\/([^/]+)\/visibility$/.exec(url)
+  const joinPath = /^\/api\/groups\/([^/]+)\/join$/.exec(url)
 
   if (method === 'GET' && url === '/api/me') {
     await store.upsertUser(identity)
@@ -71,6 +73,44 @@ async function route(req: IncomingMessage, res: ServerResponse, url: string, ide
     }
     await store.upsertUser(identity)
     sendJson(res, 201, await store.createGroup(identity, name))
+    return
+  }
+  if (method === 'GET' && url === '/api/groups/public') {
+    const groups = await store.listPublicGroups()
+    sendJson(res, 200, { groups: groups.filter(g => !g.memberIds.includes(identity.userId)) })
+    return
+  }
+  if (method === 'POST' && visibilityPath) {
+    const body = await readJsonBody(req)
+    if (typeof body['public'] !== 'boolean') {
+      sendJson(res, 400, { error: 'public must be true or false' })
+      return
+    }
+    const group = await store.getGroup(visibilityPath[1] ?? '')
+    if (!group) {
+      sendJson(res, 404, { error: 'group not found' })
+      return
+    }
+    if (group.ownerId !== identity.userId) {
+      sendJson(res, 403, { error: 'only the owner can change visibility' })
+      return
+    }
+    await store.setGroupVisibility(group.id, body['public'])
+    sendJson(res, 200, { ...group, isPublic: body['public'] })
+    return
+  }
+  if (method === 'POST' && joinPath) {
+    const group = await store.getGroup(joinPath[1] ?? '')
+    if (!group) {
+      sendJson(res, 404, { error: 'group not found' })
+      return
+    }
+    const joined = await store.joinGroup(group.id, identity)
+    if (!joined) {
+      sendJson(res, 403, { error: 'this crew is invite only' })
+      return
+    }
+    sendJson(res, 200, joined)
     return
   }
   if (method === 'POST' && invitePath) {

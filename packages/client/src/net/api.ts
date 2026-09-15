@@ -4,7 +4,9 @@ import type { OnboardProfile } from '../ui/onboarding.js'
 export interface ApiGroup {
   id: string
   name: string
+  ownerId: string
   memberIds: string[]
+  isPublic?: boolean
 }
 
 export interface ApiRunRecord {
@@ -35,6 +37,9 @@ export interface GroupApi {
   createGroup(name: string): Promise<ApiGroup>
   createInvite(groupId: string): Promise<string>
   acceptInvite(code: string): Promise<ApiGroup | undefined>
+  setVisibility(groupId: string, isPublic: boolean): Promise<ApiGroup>
+  publicGroups(): Promise<ApiGroup[]>
+  joinGroup(groupId: string): Promise<ApiGroup>
   history(groupId: string): Promise<ApiRunRecord[]>
 }
 
@@ -76,6 +81,9 @@ export function createGroupApi(baseUrl: string, token: () => string | undefined)
     createGroup: name => call('POST', '/api/groups', { name }),
     createInvite: groupId => call<{ code: string }>('POST', `/api/groups/${groupId}/invites`).then(r => r.code),
     acceptInvite: code => call<ApiGroup>('POST', `/api/invites/${code}/accept`).catch(() => undefined),
+    setVisibility: (groupId, isPublic) => call('POST', `/api/groups/${groupId}/visibility`, { public: isPublic }),
+    publicGroups: () => call<{ groups: ApiGroup[] }>('GET', '/api/groups/public').then(r => r.groups),
+    joinGroup: groupId => call('POST', `/api/groups/${groupId}/join`),
     history: groupId => call('GET', `/api/groups/${groupId}/history`)
   }
 }

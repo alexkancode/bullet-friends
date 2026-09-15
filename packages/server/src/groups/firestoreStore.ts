@@ -2,6 +2,7 @@ import { createPrivateKey, sign } from 'node:crypto'
 import { randomUUID } from 'node:crypto'
 import type { TokenIdentity } from '../auth/verifier.js'
 import type { DesignRecord, DesignSummary, Group, GroupStore, RunRecord, UserProfile } from './store.js'
+import { PUBLIC_GROUP_LIST_LIMIT } from './store.js'
 import { base64UrlEncode } from '../auth/jwt.js'
 import { fromFirestoreFields, toFirestoreFields } from './firestoreValues.js'
 import type { FirestoreValue } from './firestoreValues.js'
@@ -121,22 +122,42 @@ export class FirestoreGroupStore implements GroupStore {
     return { id, ...(fromFirestoreFields(doc.fields) as Omit<Group, 'id'>) }
   }
 
-  async getUserGroups(userId: string): Promise<Group[]> {
+  getUserGroups(userId: string): Promise<Group[]> {
+    return this.queryGroups({ field: { fieldPath: 'memberIds' }, op: 'ARRAY_CONTAINS', value: { stringValue: userId } })
+  }
+
+  async setGroupVisibility(groupId: string, isPublic: boolean): Promise<void> {
+    await this.call('PATCH', `/groups/${groupId}?updateMask.fieldPaths=isPublic`, { fields: toFirestoreFields({ isPublic }) })
+  }
+
+  async listPublicGroups(): Promise<Group[]> {
+    const open = await this.queryGroups({ field: { fieldPath: 'isPublic' }, op: 'EQUAL', value: { booleanValue: true } })
+    return open.sort((a, b) => b.createdAt - a.createdAt).slice(0, PUBLIC_GROUP_LIST_LIMIT)
+  }
+
+  async joinGroup(groupId: string, user: TokenIdentity): Promise<Group | undefined> {
+    const group = await this.getGroup(groupId)
+    if (!group?.isPublic) return undefined
+    await this.addMember(group, user)
+    return group
+  }
+
+  private async queryGroups(fieldFilter: { field: { fieldPath: string }; op: string; value: FirestoreValue }): Promise<Group[]> {
     const results = (await this.call('POST', ':runQuery', {
-      structuredQuery: {
-        from: [{ collectionId: 'groups' }],
-        where: {
-          fieldFilter: {
-            field: { fieldPath: 'memberIds' },
-            op: 'ARRAY_CONTAINS',
-            value: { stringValue: userId }
-          }
-        }
-      }
+      structuredQuery: { from: [{ collectionId: 'groups' }], where: { fieldFilter } }
     })) as { document?: FirestoreDocument }[]
     return results.flatMap(r =>
       r.document?.fields ? [{ id: idOf(r.document.name), ...(fromFirestoreFields(r.document.fields) as Omit<Group, 'id'>) }] : []
     )
+  }
+
+  private async addMember(group: Group, user: TokenIdentity): Promise<void> {
+    await this.upsertUser(user)
+    if (group.memberIds.includes(user.userId)) return
+    group.memberIds.push(user.userId)
+    await this.call('PATCH', `/groups/${group.id}?updateMask.fieldPaths=memberIds`, {
+      fields: toFirestoreFields({ memberIds: group.memberIds })
+    })
   }
 
   async createInvite(groupId: string): Promise<string> {
@@ -152,13 +173,7 @@ export class FirestoreGroupStore implements GroupStore {
     const group = await this.getGroup(groupId)
     if (!group) return undefined
     await this.call('DELETE', `/invites/${code}`)
-    await this.upsertUser(user)
-    if (!group.memberIds.includes(user.userId)) {
-      group.memberIds.push(user.userId)
-      await this.call('PATCH', `/groups/${groupId}?updateMask.fieldPaths=memberIds`, {
-        fields: toFirestoreFields({ memberIds: group.memberIds })
-      })
-    }
+    await this.addMember(group, user)
     return group
   }
 

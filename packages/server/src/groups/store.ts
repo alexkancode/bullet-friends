@@ -11,7 +11,10 @@ export interface Group {
   ownerId: string
   memberIds: string[]
   createdAt: number
+  isPublic?: boolean
 }
+
+export const PUBLIC_GROUP_LIST_LIMIT = 50
 
 export interface RunRecordPlayer {
   name: string
@@ -54,6 +57,9 @@ export interface GroupStore {
   getUserGroups(userId: string): Promise<Group[]>
   createInvite(groupId: string): Promise<string>
   acceptInvite(code: string, user: TokenIdentity): Promise<Group | undefined>
+  setGroupVisibility(groupId: string, isPublic: boolean): Promise<void>
+  listPublicGroups(): Promise<Group[]>
+  joinGroup(groupId: string, user: TokenIdentity): Promise<Group | undefined>
   appendRun(groupId: string, run: RunRecord): Promise<void>
   getHistory(groupId: string): Promise<RunRecord[]>
 }

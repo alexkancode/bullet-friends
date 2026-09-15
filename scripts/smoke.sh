@@ -84,6 +84,17 @@ request GET "/api/groups/$GROUP_ID/history" 403 "history denied before joining" 
 request POST "/api/invites/$INVITE_CODE/accept" 200 "accept invite" "${AUTH_B[@]}"
 assert_json "body.id" "$GROUP_ID" "accept returns the joined group"
 request GET "/api/groups/$GROUP_ID/history" 200 "history after joining" "${AUTH_B[@]}"
+request POST "/api/groups/$GROUP_ID/visibility" 200 "owner makes group public" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"public":true}'
+assert_json "body.isPublic" "true" "visibility reflects public"
+signup c "signup c"
+TOKEN_C=$(json "body.token")
+AUTH_C=(-H "Authorization: Bearer $TOKEN_C")
+request GET /api/groups/public 200 "public groups listed" "${AUTH_C[@]}"
+assert_json "body.groups.some(g => g.id === '$GROUP_ID')" "true" "public list contains the crew"
+request POST "/api/groups/$GROUP_ID/join" 200 "join public group" "${AUTH_C[@]}"
+request GET /api/me 200 "me c" "${AUTH_C[@]}"
+assert_json "body.groups.some(g => g.id === '$GROUP_ID')" "true" "joined crew appears on me"
+request POST "/api/groups/$GROUP_ID/visibility" 200 "owner makes group private again" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"public":false}'
 
 echo "--- unhappy path"
 request GET /api/me 401 "me without token"
@@ -96,6 +107,12 @@ request POST /api/auth/login 401 "login wrong password" "${JSON_HEADER[@]}" \
   -d "{\"email\":\"smoke-a+$STAMP@example.com\",\"password\":\"wrongpassword\"}"
 request POST /api/groups 400 "group without name" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"name":"   "}'
 request POST /api/invites/nope/accept 404 "accept unknown invite" "${AUTH_B[@]}"
+request POST "/api/groups/$GROUP_ID/visibility" 403 "member cannot change visibility" "${AUTH_B[@]}" "${JSON_HEADER[@]}" -d '{"public":true}'
+request POST "/api/groups/$GROUP_ID/visibility" 400 "visibility non boolean" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"public":"yes"}'
+request POST /api/groups 201 "create private group" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"name":"Smoke Secret"}'
+PRIVATE_ID=$(json "body.id")
+request POST "/api/groups/$PRIVATE_ID/join" 403 "join private group" "${AUTH_C[@]}"
+request POST /api/groups/nope/join 404 "join unknown group" "${AUTH_C[@]}"
 request POST /api/me/cam-consent 400 "cam consent non boolean" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"allowed":"yes"}'
 request POST /api/designs 400 "invalid design" "${AUTH_A[@]}" "${JSON_HEADER[@]}" -d '{"design":{}}'
 request GET /api/nope 404 "unknown api route" "${AUTH_A[@]}"

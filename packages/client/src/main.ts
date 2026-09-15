@@ -17,6 +17,7 @@ import { renderHistoryTable } from './ui/historyTable.js'
 import { formatStopwatch } from './ui/stopwatch.js'
 import { nextStep, selectGroup } from './ui/onboarding.js'
 import { statsExit } from './ui/leave.js'
+import { memberLabel, visibilityControl } from './ui/groups.js'
 import type { GroupSelectReason, OnboardProfile } from './ui/onboarding.js'
 import { createGoogleAuthProvider, nullAuthProvider } from './auth/google.js'
 import { inviteCodeFromSearch, inviteUrl } from './auth/invites.js'
@@ -74,6 +75,9 @@ const ui = {
   inviteButton: el<HTMLButtonElement>('invite-button'),
   historyButton: el<HTMLButtonElement>('history-button'),
   switchGroupButton: el<HTMLButtonElement>('switch-group-button'),
+  visibilityButton: el<HTMLButtonElement>('visibility-button'),
+  publicGroupsLabel: el('public-groups-label'),
+  publicGroups: el('public-groups'),
   groupNote: el('group-note'),
   stepStaging: el('step-staging'),
   stagingRoom: el('staging-room'),
@@ -209,26 +213,39 @@ function renderFlow(): void {
   if (step === 'ready' && activeGroup) {
     ui.readyTitle.textContent = activeGroup.name
     ui.roomLabel.textContent = roomCodeForGroup(activeGroup.id)
+    renderVisibilityButton()
   }
   if (step === 'staging' && activeGroup) {
     ui.stagingRoom.textContent = roomCodeForGroup(activeGroup.id)
   }
 }
 
+function renderVisibilityButton(): void {
+  const control = visibilityControl(activeGroup, profile?.userId ?? '')
+  ui.visibilityButton.hidden = control === undefined
+  if (control) ui.visibilityButton.textContent = control.label
+}
+
+function groupPickItem(label: string, onPick: () => void): HTMLLIElement {
+  const item = document.createElement('li')
+  const pick = document.createElement('button')
+  pick.className = 'group-pick'
+  pick.type = 'button'
+  pick.textContent = label
+  pick.addEventListener('click', onPick)
+  item.append(pick)
+  return item
+}
+
 function renderGroupList(): void {
   ui.myGroups.replaceChildren()
   for (const group of myGroups) {
-    const item = document.createElement('li')
-    const pick = document.createElement('button')
-    pick.className = 'group-pick'
-    pick.type = 'button'
-    pick.textContent = `${group.name} (${group.memberIds.length} member${group.memberIds.length === 1 ? '' : 's'})`
-    pick.addEventListener('click', () => {
-      activeGroup = group
-      renderFlow()
-    })
-    item.append(pick)
-    ui.myGroups.append(item)
+    ui.myGroups.append(
+      groupPickItem(`${group.name} (${memberLabel(group.memberIds.length)})`, () => {
+        activeGroup = group
+        renderFlow()
+      })
+    )
   }
   if (myGroups.length === 0) {
     const empty = document.createElement('li')
@@ -236,6 +253,30 @@ function renderGroupList(): void {
     empty.textContent = 'No groups yet — create one below or open a friend’s invite link.'
     ui.myGroups.append(empty)
   }
+  void renderPublicGroups()
+}
+
+async function renderPublicGroups(): Promise<void> {
+  const groups = await groupApi.publicGroups().catch(() => [])
+  ui.publicGroupsLabel.hidden = groups.length === 0
+  ui.publicGroups.replaceChildren()
+  for (const group of groups) {
+    ui.publicGroups.append(groupPickItem(`${group.name} (${memberLabel(group.memberIds.length)}) · Join`, () => void joinPublicGroup(group)))
+  }
+}
+
+async function joinPublicGroup(group: ApiGroup): Promise<void> {
+  try {
+    await adoptGroup(await groupApi.joinGroup(group.id))
+  } catch {
+    ui.groupError.textContent = 'Could not join that crew'
+  }
+}
+
+async function adoptGroup(group: ApiGroup): Promise<void> {
+  await refreshGroups()
+  activeGroup = myGroups.find(g => g.id === group.id) ?? group
+  renderFlow()
 }
 
 async function adoptSession(token: string, newProfile: OnboardProfile): Promise<void> {
@@ -345,15 +386,22 @@ ui.groupCreateButton.addEventListener('click', () => {
   if (!name) return
   void groupApi
     .createGroup(name)
-    .then(async group => {
+    .then(group => {
       ui.groupNameInput.value = ''
-      await refreshGroups()
-      activeGroup = myGroups.find(g => g.id === group.id) ?? group
-      renderFlow()
+      return adoptGroup(group)
     })
     .catch(() => {
       ui.groupError.textContent = 'Could not create the group'
     })
+})
+
+ui.visibilityButton.addEventListener('click', () => {
+  const control = visibilityControl(activeGroup, profile?.userId ?? '')
+  if (!activeGroup || !control) return
+  void groupApi
+    .setVisibility(activeGroup.id, control.next)
+    .then(adoptGroup)
+    .catch(() => (ui.groupNote.textContent = 'Could not change visibility'))
 })
 
 ui.switchGroupButton.addEventListener('click', () => {
