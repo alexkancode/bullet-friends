@@ -2,7 +2,9 @@ import type { Rng } from './rng.js'
 
 export type StatKey = 'maxHp' | 'damage' | 'fireRateMs' | 'moveSpeed' | 'pickupRadius'
 
-export type GearSlot = 'hat' | 'eyes' | 'nose' | 'mouth'
+export type GearSlot = 'hat' | 'eyes' | 'nose' | 'mouth' | 'hand'
+
+export const GEAR_SLOTS: GearSlot[] = ['hat', 'eyes', 'nose', 'mouth', 'hand']
 
 export interface GearModifier {
   stat: StatKey
@@ -26,7 +28,10 @@ export const GEAR_CATALOG: GearItem[] = [
   { id: 'monocle', name: 'Monocle', slot: 'eyes', art: 'art/gear/monocle.svg', modifiers: [{ stat: 'pickupRadius', mult: 1.5 }] },
   { id: 'star-shades', name: 'Star Shades', slot: 'eyes', art: 'art/gear/star-shades.svg', modifiers: [{ stat: 'fireRateMs', mult: 0.85 }] },
   { id: 'pipe', name: 'Bubble Pipe', slot: 'mouth', art: 'art/gear/pipe.svg', modifiers: [{ stat: 'damage', mult: 1.1 }, { stat: 'maxHp', flat: 10 }] },
-  { id: 'mustache', name: 'Mustache', slot: 'nose', art: 'art/gear/mustache.svg', modifiers: [{ stat: 'moveSpeed', mult: 1.1 }, { stat: 'fireRateMs', mult: 0.92 }] }
+  { id: 'mustache', name: 'Mustache', slot: 'nose', art: 'art/gear/mustache.svg', modifiers: [{ stat: 'moveSpeed', mult: 1.1 }, { stat: 'fireRateMs', mult: 0.92 }] },
+  { id: 'wooden-sword', name: 'Wooden Sword', slot: 'hand', art: 'art/gear/wooden-sword.svg', modifiers: [{ stat: 'damage', mult: 1.2 }] },
+  { id: 'slingshot', name: 'Slingshot', slot: 'hand', art: 'art/gear/slingshot.svg', modifiers: [{ stat: 'fireRateMs', mult: 0.88 }] },
+  { id: 'torch', name: 'Torch', slot: 'hand', art: 'art/gear/torch.svg', modifiers: [{ stat: 'maxHp', flat: 15 }, { stat: 'moveSpeed', mult: 1.05 }] }
 ]
 
 export function gearById(id: string): GearItem | undefined {

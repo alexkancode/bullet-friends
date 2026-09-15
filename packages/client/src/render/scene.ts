@@ -4,6 +4,7 @@ import type { SpriteStore } from './sprites.js'
 import type { CamFeeds } from '../camera/feeds.js'
 import { playerColor, GAME, INK, SURFACE } from './palette.js'
 import { placeGear, stackGear } from './gearLayout.js'
+import type { WornGear } from './gearLayout.js'
 
 
 export interface SceneDeps {
@@ -133,7 +134,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   ctx.arc(x, y, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  for (const worn of stackGear(player.gear, id => designGear(deps.design, id)?.slot, player.id, r)) drawGear(ctx, deps, worn.gearId, x + worn.xOffset, y, r)
+  for (const worn of stackGear(player.gear, id => designGear(deps.design, id)?.slot, player.id, r)) drawGear(ctx, deps, worn, x, y, r)
 
   ctx.fillStyle = INK.secondary
   ctx.font = '600 16px system-ui, sans-serif'
@@ -143,13 +144,19 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   drawBar(ctx, x, y + r + 28, r * 2, 6, player.hp / player.stats.maxHp, GAME.hpGood)
 }
 
-function drawGear(ctx: CanvasRenderingContext2D, deps: SceneDeps, gearId: string, x: number, y: number, r: number): void {
-  const item = designGear(deps.design, gearId)
+function drawGear(ctx: CanvasRenderingContext2D, deps: SceneDeps, worn: WornGear, x: number, y: number, r: number): void {
+  const item = designGear(deps.design, worn.gearId)
   if (!item) return
   const sprite = deps.sprites.ready(item.art)
   if (!sprite) return
   const { width, height, centerYOffset } = placeGear(item.slot, r, sprite.naturalHeight / sprite.naturalWidth)
-  ctx.drawImage(sprite, x - width / 2, y + centerYOffset - height / 2, width, height)
+  const centerX = x + worn.xOffset
+  const centerY = y + centerYOffset + worn.yOffset
+  ctx.save()
+  ctx.translate(centerX, centerY)
+  if (worn.mirrored) ctx.scale(-1, 1)
+  ctx.drawImage(sprite, -width / 2, -height / 2, width, height)
+  ctx.restore()
 }
 
 function drawBar(ctx: CanvasRenderingContext2D, cx: number, top: number, width: number, height: number, ratio: number, color: string): void {

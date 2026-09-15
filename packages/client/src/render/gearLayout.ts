@@ -1,10 +1,15 @@
 import type { GearSlot } from '@bullet/core'
 import { createRng } from '@bullet/core'
+import type { Rng } from '@bullet/core'
 
 export const FACE_CLEAR_RATIO = 0.3
 
 const SPREAD_RATIO = 0.25
 const JITTER_RATIO = 0.08
+const HAND_CENTER_RATIO = 1.5
+const HAND_STEP_RATIO = 0.2
+const HAND_SPREAD_RATIO = 0.55
+const HAND_JITTER_RATIO = 0.1
 
 const EDGE_INSET_RATIO = 0.06
 
@@ -12,7 +17,8 @@ const SLOT_WIDTH_RATIO: Record<GearSlot, number> = {
   hat: 1.4,
   eyes: 0.85,
   nose: 0.7,
-  mouth: 0.9
+  mouth: 0.9,
+  hand: 0.45
 }
 
 export interface GearPlacement {
@@ -30,23 +36,47 @@ export function placeGear(slot: GearSlot, radius: number, aspect: number): GearP
 export interface WornGear {
   gearId: string
   xOffset: number
+  yOffset: number
+  mirrored: boolean
+}
+
+interface SlotItem extends WornGear {
+  slot: GearSlot
 }
 
 export function stackGear(gearIds: string[], slotOf: (id: string) => GearSlot | undefined, playerId: string, radius: number): WornGear[] {
-  const worn = gearIds.flatMap(gearId => {
+  const worn: SlotItem[] = gearIds.flatMap(gearId => {
     const slot = slotOf(gearId)
-    return slot ? [{ gearId, slot, xOffset: 0 }] : []
+    return slot ? [{ gearId, slot, xOffset: 0, yOffset: 0, mirrored: false }] : []
   })
   const rng = createRng(hashString(playerId))
   for (const slot of new Set(worn.map(w => w.slot))) {
     const shared = worn.filter(w => w.slot === slot)
-    if (shared.length < 2) continue
-    shared.forEach((item, index) => {
-      const spread = (index / (shared.length - 1) - 0.5) * 2 * radius * SPREAD_RATIO
-      item.xOffset = spread + (rng() * 2 - 1) * radius * JITTER_RATIO
-    })
+    if (slot === 'hand') placeHands(shared, radius, rng)
+    else spreadAcross(shared, radius, rng)
   }
-  return worn.map(({ gearId, xOffset }) => ({ gearId, xOffset }))
+  return worn.map(({ gearId, xOffset, yOffset, mirrored }) => ({ gearId, xOffset, yOffset, mirrored }))
+}
+
+function spreadAcross(shared: SlotItem[], radius: number, rng: Rng): void {
+  if (shared.length < 2) return
+  shared.forEach((item, index) => {
+    const spread = (index / (shared.length - 1) - 0.5) * 2 * radius * SPREAD_RATIO
+    item.xOffset = spread + (rng() * 2 - 1) * radius * JITTER_RATIO
+  })
+}
+
+function placeHands(shared: SlotItem[], radius: number, rng: Rng): void {
+  const sides = [shared.filter((_, index) => index % 2 === 0), shared.filter((_, index) => index % 2 === 1)]
+  sides.forEach((side, sideIndex) => {
+    const direction = sideIndex === 0 ? 1 : -1
+    side.forEach((item, k) => {
+      const spread = side.length < 2 ? 0 : (k / (side.length - 1) - 0.5) * 2 * radius * HAND_SPREAD_RATIO
+      item.xOffset = direction * radius * (HAND_CENTER_RATIO + k * HAND_STEP_RATIO)
+      item.yOffset = spread + (side.length < 2 ? 0 : (rng() * 2 - 1) * radius * HAND_JITTER_RATIO)
+      item.mirrored = direction < 0
+    })
+  })
 }
 
 function hashString(text: string): number {
@@ -57,6 +87,7 @@ function hashString(text: string): number {
 
 function bandHeight(slot: GearSlot, radius: number): number {
   if (slot === 'hat' || slot === 'mouth') return Infinity
+  if (slot === 'hand') return radius * 2
   return radius - radius * EDGE_INSET_RATIO - radius * FACE_CLEAR_RATIO
 }
 
@@ -65,6 +96,7 @@ function centerFor(slot: GearSlot, radius: number, height: number): number {
   if (slot === 'hat') return -radius - height / 2
   if (slot === 'eyes') return -radius + inset + height / 2
   if (slot === 'nose') return radius - inset - height / 2
+  if (slot === 'hand') return 0
   return radius + height / 2
 }
 

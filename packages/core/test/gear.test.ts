@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { addPlayer, computeStats, createGameState, createRng, pickGear, rollOffers, startRun, GEAR_CATALOG, BASE_STATS } from '@bullet/core'
+import { addPlayer, computeStats, createGameState, createRng, pickGear, rollOffers, startRun, GEAR_CATALOG, GEAR_SLOTS, BASE_STATS } from '@bullet/core'
 
 describe('gear', () => {
   it('has a catalog where every item renders on a bubble anchor', () => {
     expect(GEAR_CATALOG.length).toBeGreaterThanOrEqual(6)
     for (const item of GEAR_CATALOG) {
-      expect(['hat', 'eyes', 'nose', 'mouth']).toContain(item.slot)
+      expect(GEAR_SLOTS).toContain(item.slot)
       expect(item.art.length).toBeGreaterThan(0)
     }
+  })
+
+  it('offers three hand-held items on the hand slot', () => {
+    expect(GEAR_SLOTS).toContain('hand')
+    const hands = GEAR_CATALOG.filter(g => g.slot === 'hand').map(g => g.id)
+    expect(hands).toEqual(['wooden-sword', 'slingshot', 'torch'])
   })
 
   it('places the mustache on the nose and the pipe on the mouth', () => {

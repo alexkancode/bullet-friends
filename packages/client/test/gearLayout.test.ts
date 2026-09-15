@@ -4,7 +4,7 @@ import { placeGear, stackGear, FACE_CLEAR_RATIO } from '../src/render/gearLayout
 
 const RADIUS = 40
 const ASPECTS = [0.4, 0.5, 0.67]
-const SLOTS: GearSlot[] = ['hat', 'eyes', 'nose', 'mouth']
+const SLOTS: GearSlot[] = ['hat', 'eyes', 'nose', 'mouth', 'hand']
 
 function edges(slot: GearSlot, aspect: number) {
   const placement = placeGear(slot, RADIUS, aspect)
@@ -49,7 +49,7 @@ describe('placeGear', () => {
 
   it('never covers the central face zone with any slot', () => {
     const clear = RADIUS * FACE_CLEAR_RATIO
-    for (const slot of SLOTS) {
+    for (const slot of SLOTS.filter(s => s !== 'hand')) {
       for (const aspect of ASPECTS) {
         const placement = edges(slot, aspect)
         const coversCenter = placement.top < clear && placement.bottom > -clear
@@ -66,14 +66,14 @@ describe('placeGear', () => {
   })
 })
 
-const SLOT_OF: Record<string, GearSlot> = { monocle: 'eyes', 'top-hat': 'hat', 'viking-helm': 'hat', mustache: 'nose' }
+const SLOT_OF: Record<string, GearSlot> = { monocle: 'eyes', 'top-hat': 'hat', 'viking-helm': 'hat', mustache: 'nose', 'wooden-sword': 'hand', torch: 'hand' }
 const slotOf = (id: string) => SLOT_OF[id]
 
 describe('stackGear', () => {
   it('centres a lone item in each slot', () => {
     expect(stackGear(['monocle', 'top-hat'], slotOf, 'p1', RADIUS)).toEqual([
-      { gearId: 'monocle', xOffset: 0 },
-      { gearId: 'top-hat', xOffset: 0 }
+      { gearId: 'monocle', xOffset: 0, yOffset: 0, mirrored: false },
+      { gearId: 'top-hat', xOffset: 0, yOffset: 0, mirrored: false }
     ])
   })
 
@@ -102,5 +102,57 @@ describe('stackGear', () => {
     const stacked = stackGear(['monocle', 'ghost', 'top-hat'], slotOf, 'p1', RADIUS)
     expect(stacked.map(g => g.gearId)).toEqual(['monocle', 'top-hat'])
     expect(stacked.every(g => g.xOffset === 0)).toBe(true)
+  })
+})
+
+describe('hand slot', () => {
+  it('sizes hand items beside the circle, centred vertically and inside its height', () => {
+    for (const aspect of [1.5, 2, 3]) {
+      const hand = edges('hand', aspect)
+      expect(hand.centerYOffset).toBe(0)
+      expect(hand.height).toBeLessThanOrEqual(RADIUS * 2)
+      expect(hand.width).toBeLessThan(RADIUS)
+    }
+  })
+
+  it('keeps every hand item entirely outside the circle', () => {
+    const worn = stackGear(['wooden-sword', 'torch', 'wooden-sword', 'torch'], slotOf, 'p1', RADIUS)
+    for (const aspect of [1.5, 2, 3]) {
+      const { width } = placeGear('hand', RADIUS, aspect)
+      for (const w of worn) expect(Math.abs(w.xOffset) - width / 2).toBeGreaterThanOrEqual(RADIUS)
+    }
+  })
+
+  it('puts a single hand item on the right, level with the centre', () => {
+    const [sword] = stackGear(['wooden-sword'], slotOf, 'p1', RADIUS)
+    expect(sword!.xOffset).toBeGreaterThan(RADIUS)
+    expect(sword!.yOffset).toBe(0)
+    expect(sword!.mirrored).toBe(false)
+  })
+
+  it('alternates sides and mirrors the left', () => {
+    const [right, left] = stackGear(['wooden-sword', 'torch'], slotOf, 'p1', RADIUS)
+    expect(right!.xOffset).toBeGreaterThan(RADIUS)
+    expect(left!.xOffset).toBeLessThan(-RADIUS)
+    expect(left!.mirrored).toBe(true)
+    expect(Math.abs(left!.xOffset)).toBeCloseTo(right!.xOffset)
+  })
+
+  it('fans a loaded side up and down while stepping outward', () => {
+    const worn = stackGear(['wooden-sword', 'wooden-sword', 'wooden-sword', 'wooden-sword'], slotOf, 'p1', RADIUS)
+    const right = worn.filter(w => !w.mirrored)
+    const left = worn.filter(w => w.mirrored)
+    expect(right).toHaveLength(2)
+    expect(left).toHaveLength(2)
+    expect(right[0]!.yOffset).toBeLessThan(right[1]!.yOffset)
+    expect(right[1]!.xOffset).toBeGreaterThan(right[0]!.xOffset)
+    for (const w of worn) expect(Math.abs(w.yOffset)).toBeLessThanOrEqual(RADIUS * 0.7)
+  })
+
+  it('keeps hand items stable per player and different across players', () => {
+    const gear = ['wooden-sword', 'torch', 'wooden-sword']
+    const a = stackGear(gear, slotOf, 'p1', RADIUS)
+    expect(stackGear(gear, slotOf, 'p1', RADIUS)).toEqual(a)
+    expect(stackGear(gear, slotOf, 'p2', RADIUS)).not.toEqual(a)
   })
 })

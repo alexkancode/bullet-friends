@@ -1,5 +1,5 @@
 import type { EnemyDesign, GameDesign, GearItem, LevelDesign, StatKey } from '@bullet/core'
-import { defaultDesign } from '@bullet/core'
+import { defaultDesign, GEAR_SLOTS } from '@bullet/core'
 import { addEnemy, addGear, addLevel, removeLevel, updateEnemy, updateGear, updateLevel } from './designEdit.js'
 import { fileToArtDataUrl } from './assetUpload.js'
 import { artUrl } from '../render/sprites.js'
@@ -8,7 +8,6 @@ import { describeModifier } from './shop.js'
 type Tab = 'levels' | 'enemies' | 'gear'
 
 const STAT_KEYS: StatKey[] = ['maxHp', 'damage', 'fireRateMs', 'moveSpeed', 'pickupRadius']
-const SLOTS = ['hat', 'eyes', 'nose', 'mouth'] as const
 
 export interface DesignerHost {
   overlay: HTMLElement
@@ -180,7 +179,7 @@ export class DesignerStudio {
     slotLabel.className = 'designer-field'
     slotLabel.append(document.createTextNode('Worn on'))
     const slotSelect = document.createElement('select')
-    for (const slot of SLOTS) {
+    for (const slot of GEAR_SLOTS) {
       const option = document.createElement('option')
       option.value = slot
       option.textContent = slot

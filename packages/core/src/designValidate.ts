@@ -1,5 +1,6 @@
+import { GEAR_SLOTS } from './gear.js'
 import type { EnemyDesign, GameDesign, LevelDesign } from './design.js'
-import type { GearItem, GearModifier, GearSlot, StatKey } from './gear.js'
+import type { GearItem, GearModifier, StatKey } from './gear.js'
 
 export const DESIGN_LIMITS = {
   maxEnemies: 20,
@@ -22,7 +23,6 @@ export const DESIGN_LIMITS = {
   maxSpawnMs: 10000
 } as const
 
-const SLOTS: GearSlot[] = ['hat', 'eyes', 'nose', 'mouth']
 const STAT_KEYS: StatKey[] = ['maxHp', 'damage', 'fireRateMs', 'moveSpeed', 'pickupRadius']
 
 export function sanitizeDesign(input: unknown): GameDesign | undefined {
@@ -77,7 +77,7 @@ function sanitizeGear(input: unknown): GearItem | undefined {
   const id = cleanId(raw.id)
   const art = cleanArt(raw.art)
   if (!id || !art) return undefined
-  if (!raw.slot || !SLOTS.includes(raw.slot)) return undefined
+  if (!raw.slot || !GEAR_SLOTS.includes(raw.slot)) return undefined
   if (!Array.isArray(raw.modifiers) || raw.modifiers.length === 0 || raw.modifiers.length > 4) return undefined
   const modifiers: GearModifier[] = []
   for (const mod of raw.modifiers) {
