@@ -1,6 +1,10 @@
 import type { GearSlot } from '@bullet/core'
+import { createRng } from '@bullet/core'
 
 export const FACE_CLEAR_RATIO = 0.3
+
+const SPREAD_RATIO = 0.25
+const JITTER_RATIO = 0.08
 
 const EDGE_INSET_RATIO = 0.06
 
@@ -21,6 +25,34 @@ export function placeGear(slot: GearSlot, radius: number, aspect: number): GearP
   const rawWidth = radius * 2 * SLOT_WIDTH_RATIO[slot]
   const { width, height } = fitToBand(rawWidth, rawWidth * aspect, bandHeight(slot, radius))
   return { width, height, centerYOffset: centerFor(slot, radius, height) }
+}
+
+export interface WornGear {
+  gearId: string
+  xOffset: number
+}
+
+export function stackGear(gearIds: string[], slotOf: (id: string) => GearSlot | undefined, playerId: string, radius: number): WornGear[] {
+  const worn = gearIds.flatMap(gearId => {
+    const slot = slotOf(gearId)
+    return slot ? [{ gearId, slot, xOffset: 0 }] : []
+  })
+  const rng = createRng(hashString(playerId))
+  for (const slot of new Set(worn.map(w => w.slot))) {
+    const shared = worn.filter(w => w.slot === slot)
+    if (shared.length < 2) continue
+    shared.forEach((item, index) => {
+      const spread = (index / (shared.length - 1) - 0.5) * 2 * radius * SPREAD_RATIO
+      item.xOffset = spread + (rng() * 2 - 1) * radius * JITTER_RATIO
+    })
+  }
+  return worn.map(({ gearId, xOffset }) => ({ gearId, xOffset }))
+}
+
+function hashString(text: string): number {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0
+  return hash
 }
 
 function bandHeight(slot: GearSlot, radius: number): number {

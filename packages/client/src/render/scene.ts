@@ -3,7 +3,7 @@ import { designEnemy, designGear, ARENA, PLAYER_RADIUS, PROJECTILE_RADIUS, ORB_R
 import type { SpriteStore } from './sprites.js'
 import type { CamFeeds } from '../camera/feeds.js'
 import { playerColor, GAME, INK, SURFACE } from './palette.js'
-import { placeGear } from './gearLayout.js'
+import { placeGear, stackGear } from './gearLayout.js'
 
 
 export interface SceneDeps {
@@ -133,7 +133,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   ctx.arc(x, y, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  for (const gearId of new Set(player.gear)) drawGear(ctx, deps, gearId, x, y, r)
+  for (const worn of stackGear(player.gear, id => designGear(deps.design, id)?.slot, player.id, r)) drawGear(ctx, deps, worn.gearId, x + worn.xOffset, y, r)
 
   ctx.fillStyle = INK.secondary
   ctx.font = '600 16px system-ui, sans-serif'

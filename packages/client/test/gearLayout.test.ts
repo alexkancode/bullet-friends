@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GearSlot } from '@bullet/core'
-import { placeGear, FACE_CLEAR_RATIO } from '../src/render/gearLayout.js'
+import { placeGear, stackGear, FACE_CLEAR_RATIO } from '../src/render/gearLayout.js'
 
 const RADIUS = 40
 const ASPECTS = [0.4, 0.5, 0.67]
@@ -63,5 +63,44 @@ describe('placeGear', () => {
     const large = placeGear('hat', 80, 0.5)
     expect(large.width).toBeCloseTo(small.width * 2)
     expect(large.centerYOffset).toBeCloseTo(small.centerYOffset * 2)
+  })
+})
+
+const SLOT_OF: Record<string, GearSlot> = { monocle: 'eyes', 'top-hat': 'hat', 'viking-helm': 'hat', mustache: 'nose' }
+const slotOf = (id: string) => SLOT_OF[id]
+
+describe('stackGear', () => {
+  it('centres a lone item in each slot', () => {
+    expect(stackGear(['monocle', 'top-hat'], slotOf, 'p1', RADIUS)).toEqual([
+      { gearId: 'monocle', xOffset: 0 },
+      { gearId: 'top-hat', xOffset: 0 }
+    ])
+  })
+
+  it('spreads copies sharing a slot from left to right within bounds', () => {
+    const offsets = stackGear(['monocle', 'monocle', 'monocle'], slotOf, 'p1', RADIUS).map(g => g.xOffset)
+    expect(offsets[0]).toBeLessThan(offsets[1]!)
+    expect(offsets[1]).toBeLessThan(offsets[2]!)
+    expect(Math.abs(offsets[1]!)).toBeLessThan(RADIUS * 0.1)
+    for (const offset of offsets) expect(Math.abs(offset)).toBeLessThanOrEqual(RADIUS * 0.35)
+  })
+
+  it('spreads different items that share a slot too', () => {
+    const [hat, helm] = stackGear(['top-hat', 'viking-helm'], slotOf, 'p1', RADIUS)
+    expect(hat!.xOffset).toBeLessThan(0)
+    expect(helm!.xOffset).toBeGreaterThan(0)
+  })
+
+  it('is stable for a player and differs between players', () => {
+    const gear = ['monocle', 'monocle', 'mustache', 'mustache']
+    const a = stackGear(gear, slotOf, 'p1', RADIUS)
+    expect(stackGear(gear, slotOf, 'p1', RADIUS)).toEqual(a)
+    expect(stackGear(gear, slotOf, 'p2', RADIUS)).not.toEqual(a)
+  })
+
+  it('keeps slots independent and skips unknown items', () => {
+    const stacked = stackGear(['monocle', 'ghost', 'top-hat'], slotOf, 'p1', RADIUS)
+    expect(stacked.map(g => g.gearId)).toEqual(['monocle', 'top-hat'])
+    expect(stacked.every(g => g.xOffset === 0)).toBe(true)
   })
 })
