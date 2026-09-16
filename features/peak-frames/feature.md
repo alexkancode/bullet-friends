@@ -82,3 +82,62 @@ flowchart TB
     classDef warm fill:#fde68a,stroke:#b45309,color:#78350f
     classDef cool fill:#bbf7d0,stroke:#15803d,color:#14532d
 ```
+
+## Phase 2: Agreed Scope
+
+Agreed in conversation on 2026-09-15: backlog items 1 through 7 from
+`implementation-plan.md`. Item 8, shrinking the snapshot stream, stays
+deferred until there is a measurement over a real network.
+
+Two corrections to the backlog, made while designing the work and recorded
+here rather than discovered later:
+
+- Item 3 drops the `resizeWidth` idea. Captured frames are already 96px and
+  the drawn bubble is 61 to 123 device pixels, so resizing at decode time
+  would couple the decoder to the render scale for a negligible gain. Only
+  the backpressure is worth doing.
+- Item 5 drops the `stackGear` memo. It never appeared in the top eighteen
+  self times, which puts it under 0.03ms per frame, and a bounded cache is
+  not worth adding for that. The per-frame `JSON.stringify` in the build
+  panel and the per-frame `getContext` call are still worth removing.
+
+## Phase 2: What Changes
+
+```mermaid
+flowchart TB
+    subgraph DRAW["canvas draw, 7.5ms today"]
+        S1[SVG image drawn scaled<br/>318 times a frame]:::before
+        S2[bitmap cache keyed by device size<br/>rasterize once, blit]:::after
+        S1 ==>|item 1, measured 14x| S2
+        G1[23 stroke pairs for the grid]:::before
+        G2[one Path2D]:::after
+        G1 ==>|item 6| G2
+        O1[radial gradient per orb per frame]:::before
+        O2[orb bitmap from the same cache]:::after
+        O1 ==>|item 6| O2
+    end
+    subgraph CAM["webcam, 2.0ms today"]
+        E1[toBlob on the main thread<br/>14.4ms, 7 times a second]:::before
+        E2[OffscreenCanvas convertToBlob<br/>plus an in-flight guard]:::after
+        E1 ==>|item 2| E2
+        D1[decode every arriving frame]:::before
+        D2[one decode per player in flight<br/>newest pending frame wins]:::after
+        D1 ==>|item 3| D2
+    end
+    subgraph ALGO["quadratics"]
+        L1[lerpById: find per entity]:::before
+        L2[one Map per list]:::after
+        L1 ==>|item 4| L2
+        A1[detectAudioEvents: nested some]:::before
+        A2[id Sets]:::after
+        A1 ==>|item 7| A2
+    end
+    subgraph HUD["HUD"]
+        H1[stringify the summary every frame]:::before
+        H2[cheap signature, skip the work]:::after
+        H1 ==>|item 5| H2
+    end
+
+    classDef before fill:#fecaca,stroke:#b91c1c,color:#7f1d1d
+    classDef after fill:#bbf7d0,stroke:#15803d,color:#14532d
+```
