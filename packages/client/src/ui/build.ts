@@ -18,6 +18,10 @@ export interface BuildSummary {
   stats: BuildStat[]
 }
 
+export function buildSignature(player: PlayerState): string {
+  return `${player.gear.join(',')}|${STAT_ORDER.map(stat => player.stats[stat]).join(',')}`
+}
+
 export function buildSummary(player: PlayerState, design: GameDesign): BuildSummary {
   return { items: countItems(player.gear, design), stats: STAT_ORDER.map(stat => describeStat(stat, player.stats[stat])) }
 }

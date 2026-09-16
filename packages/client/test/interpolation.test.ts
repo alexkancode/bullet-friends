@@ -59,6 +59,36 @@ describe('SnapshotBuffer', () => {
     expect(sampled?.players[0]?.hp).toBe(60)
   })
 
+  it('matches entities by id rather than list position', () => {
+    const buffer = new SnapshotBuffer(100)
+    const older = snapshotWithPlayerX(0)
+    spawnEnemy(older, 'blob', { x: 100, y: 100 })
+    spawnEnemy(older, 'blob', { x: 500, y: 500 })
+    const newer = snapshotWithPlayerX(0)
+    newer.enemies = [
+      { ...older.enemies[1]!, pos: { x: 700, y: 500 } },
+      { ...older.enemies[0]!, pos: { x: 300, y: 100 } }
+    ]
+    buffer.push(1000, older)
+    buffer.push(1100, newer)
+    const sampled = buffer.sample(1150)
+    expect(sampled?.enemies[0]?.pos).toEqual({ x: 600, y: 500 })
+    expect(sampled?.enemies[1]?.pos).toEqual({ x: 200, y: 100 })
+  })
+
+  it('interpolates every entity of a crowded snapshot', () => {
+    const buffer = new SnapshotBuffer(100)
+    const older = snapshotWithPlayerX(0)
+    for (let i = 0; i < 200; i++) spawnEnemy(older, 'blob', { x: i, y: 0 })
+    const newer = snapshotWithPlayerX(0)
+    newer.enemies = older.enemies.map(enemy => ({ ...enemy, pos: { x: enemy.pos.x + 100, y: 0 } }))
+    buffer.push(1000, older)
+    buffer.push(1100, newer)
+    const sampled = buffer.sample(1150)
+    expect(sampled?.enemies).toHaveLength(200)
+    expect(sampled?.enemies.every((enemy, index) => enemy.pos.x === index + 50)).toBe(true)
+  })
+
   it('is empty until pushed and discards old snapshots beyond capacity', () => {
     const buffer = new SnapshotBuffer(100, 3)
     expect(buffer.sample(1000)).toBeUndefined()

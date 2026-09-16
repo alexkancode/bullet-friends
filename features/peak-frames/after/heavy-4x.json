@@ -1,0 +1,179 @@
+{
+  "scenario": "heavy",
+  "throttle": 4,
+  "seconds": 15,
+  "bots": 3,
+  "frames": {
+    "count": 843,
+    "fps": 56.2,
+    "meanMs": 17.81,
+    "p50Ms": 16.7,
+    "p95Ms": 33.3,
+    "p99Ms": 33.4,
+    "maxMs": 49.9,
+    "over16ms": 326,
+    "over33ms": 14
+  },
+  "entities": {
+    "snapshots": 303,
+    "enemiesMean": 313,
+    "enemiesMax": 384,
+    "projectilesMean": 0,
+    "orbsMean": 4,
+    "players": 4,
+    "phases": {
+      "fighting": 303
+    },
+    "snapshotKbMean": 46.8,
+    "snapshotKbPerSecond": 945.8
+  },
+  "budget": {
+    "scriptMsPerFrame": 10.55,
+    "styleMsPerFrame": 0.51,
+    "layoutMsPerFrame": 0.55,
+    "taskMsPerFrame": 17.11,
+    "jsonParseMsPerFrame": 0.39,
+    "bitmapMsPerFrame": 31.37
+  },
+  "json": {
+    "count": 303,
+    "ms": 325.1,
+    "bytes": 14527811,
+    "kb": 14187.3
+  },
+  "bitmaps": {
+    "count": 537,
+    "ms": 26443.4
+  },
+  "drawCallsPerFrame": {
+    "drawImage": 321.8,
+    "fillRect": 133.9,
+    "beginPath": 8.2,
+    "arc": 8.2,
+    "save": 5,
+    "stroke": 5,
+    "restore": 5,
+    "clip": 4,
+    "fillText": 4,
+    "translate": 1,
+    "scale": 1,
+    "fill": 0.2
+  },
+  "hotFunctions": [
+    {
+      "name": "(program) · :0",
+      "ms": 5396.93
+    },
+    {
+      "name": "drawImage · :0",
+      "ms": 4549.68
+    },
+    {
+      "name": "(idle) · :0",
+      "ms": 941.15
+    },
+    {
+      "name": "createImageBitmap · :0",
+      "ms": 521.93
+    },
+    {
+      "name": "Blob · :0",
+      "ms": 411.28
+    },
+    {
+      "name": "JSON.parse · :22",
+      "ms": 338.11
+    },
+    {
+      "name": "rendered · index-BfNjrqjg.js:1239",
+      "ms": 330.61
+    },
+    {
+      "name": "(garbage collector) · :0",
+      "ms": 249.5
+    },
+    {
+      "name": "ready · index-BfNjrqjg.js:1230",
+      "ms": 244.65
+    },
+    {
+      "name": "lerpAll · index-BfNjrqjg.js:1003",
+      "ms": 168.39
+    },
+    {
+      "name": "proto.<computed> · :55",
+      "ms": 164.87
+    },
+    {
+      "name": "drawPlayer · index-BfNjrqjg.js:1473",
+      "ms": 145.47
+    },
+    {
+      "name": "fillRect · :0",
+      "ms": 145.03
+    },
+    {
+      "name": "convertToBlob · :0",
+      "ms": 121.67
+    },
+    {
+      "name": "updateHud · index-BfNjrqjg.js:1600",
+      "ms": 119.9
+    },
+    {
+      "name": "lerpFrom · index-BfNjrqjg.js:1007",
+      "ms": 115.05
+    },
+    {
+      "name": "drawScene · index-BfNjrqjg.js:1389",
+      "ms": 114.61
+    },
+    {
+      "name": "fillText · :0",
+      "ms": 81.55
+    }
+  ],
+  "allocators": [
+    {
+      "name": "JSON.parse · :22",
+      "kb": 1151.4
+    },
+    {
+      "name": "push · :0",
+      "kb": 30.3
+    },
+    {
+      "name": "(anonymous) · index-BfNjrqjg.js:3208",
+      "kb": 13.8
+    },
+    {
+      "name": "innerSerialize · :186",
+      "kb": 11.2
+    },
+    {
+      "name": "isURL · :50",
+      "kb": 8.2
+    },
+    {
+      "name": "tick · :14",
+      "kb": 6.6
+    },
+    {
+      "name": "from · :0",
+      "kb": 4
+    },
+    {
+      "name": "proto.<computed> · :55",
+      "kb": 4
+    },
+    {
+      "name": "ws.onmessage · index-BfNjrqjg.js:931",
+      "kb": 4
+    },
+    {
+      "name": "decodeJpeg · index-BfNjrqjg.js:1098",
+      "kb": 4
+    }
+  ],
+  "allocatedKbTotal": 1237.5
+}

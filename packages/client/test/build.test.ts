@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addPlayer, createGameState, defaultDesign, refreshStats } from '@bullet/core'
-import { buildSummary } from '../src/ui/build.js'
+import { buildSignature, buildSummary } from '../src/ui/build.js'
 
 function playerWith(gear: string[]) {
   const state = createGameState()
@@ -35,5 +35,22 @@ describe('buildSummary', () => {
     const summary = buildSummary(playerWith([]), defaultDesign())
     expect(summary.items).toEqual([])
     expect(summary.stats.every(s => s.ratio === undefined)).toBe(true)
+  })
+})
+
+describe('buildSignature', () => {
+  it('is stable while the build is unchanged', () => {
+    expect(buildSignature(playerWith(['monocle']))).toBe(buildSignature(playerWith(['monocle'])))
+  })
+
+  it('changes when an item is added', () => {
+    expect(buildSignature(playerWith(['monocle', 'monocle']))).not.toBe(buildSignature(playerWith(['monocle'])))
+  })
+
+  it('changes when a stat moves without the gear changing', () => {
+    const levelled = playerWith(['monocle'])
+    const base = buildSignature(levelled)
+    levelled.stats = { ...levelled.stats, maxHp: levelled.stats.maxHp + 5 }
+    expect(buildSignature(levelled)).not.toBe(base)
   })
 })

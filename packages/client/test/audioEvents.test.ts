@@ -31,6 +31,26 @@ describe('detectAudioEvents', () => {
     expect(detectAudioEvents(prev, next, 'p1')).toContain('shoot')
   })
 
+  it('hears a new projectile among many reordered ones', () => {
+    const prev = fighting()
+    for (let i = 0; i < 50; i++) prev.projectiles.push({ id: i, ownerId: 'p1', pos: { x: i, y: 0 }, vel: { x: 1, y: 0 }, damage: 5, ttlMs: 1000 })
+    const next = clone(prev)
+    next.projectiles.reverse()
+    expect(detectAudioEvents(prev, next, 'p1')).not.toContain('shoot')
+    next.projectiles.push({ id: 999, ownerId: 'p1', pos: { x: 0, y: 0 }, vel: { x: 1, y: 0 }, damage: 5, ttlMs: 1000 })
+    expect(detectAudioEvents(prev, next, 'p1')).toContain('shoot')
+  })
+
+  it('hears a collected orb among many reordered ones', () => {
+    const prev = fighting()
+    for (let i = 0; i < 50; i++) prev.orbs.push({ id: i, pos: { x: i, y: 0 }, xp: 3 })
+    const next = clone(prev)
+    next.orbs.reverse()
+    expect(detectAudioEvents(prev, next, 'p1')).not.toContain('orb')
+    next.orbs = next.orbs.filter(orb => orb.id !== 17)
+    expect(detectAudioEvents(prev, next, 'p1')).toContain('orb')
+  })
+
   it('hears enemy damage and enemy deaths separately', () => {
     const prev = fighting()
     spawnEnemy(prev, 'blob', { x: 100, y: 100 })

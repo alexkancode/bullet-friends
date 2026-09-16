@@ -40,7 +40,8 @@ export function detectAudioEvents(prev: GameState | undefined, next: GameState, 
   const events: AudioEventName[] = []
   const stillFighting = prev.phase === 'fighting' && next.phase === 'fighting'
 
-  if (next.projectiles.some(proj => !prev.projectiles.some(p => p.id === proj.id))) events.push('shoot')
+  const priorProjectiles = new Set(prev.projectiles.map(proj => proj.id))
+  if (next.projectiles.some(proj => !priorProjectiles.has(proj.id))) events.push('shoot')
 
   if (stillFighting) {
     const survivors = new Map(next.enemies.map(e => [e.id, e]))
@@ -53,7 +54,8 @@ export function detectAudioEvents(prev: GameState | undefined, next: GameState, 
     }
     if (hit) events.push('enemyHit')
     if (down) events.push('enemyDown')
-    if (prev.orbs.some(orb => !next.orbs.some(o => o.id === orb.id))) events.push('orb')
+    const remainingOrbs = new Set(next.orbs.map(orb => orb.id))
+    if (prev.orbs.some(orb => !remainingOrbs.has(orb.id))) events.push('orb')
   }
 
   const selfPrev = prev.players.find(p => p.id === selfId)

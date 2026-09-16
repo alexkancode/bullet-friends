@@ -138,3 +138,58 @@ either an algorithmic landmine worth defusing cheaply or small change.
 
 The ranked backlog with effort and expected gain is in
 `implementation-plan.md`.
+
+# Phase 2 Results
+
+Date: 2026-09-15
+Measured the same four scenarios, same machine, same protocol, with the same
+entity counts in the heavy room (315 enemies, 4 players, all snapshots in the
+fighting phase). Raw results are in `after/`, baselines in `baseline/`.
+
+## Frame rate and budget
+
+| Scenario | CPU | fps before | fps after | task/frame before | task/frame after | frames over 33ms |
+|---|---|---|---|---|---|---|
+| light | 1x | 60.0 | 60.0 | 3.48ms | 3.21ms | 0 to 0 |
+| light | 4x | 59.6 | 59.7 | 8.48ms | 7.72ms | 2 to 1 |
+| heavy | 1x | 59.6 | 60.1 | 12.26ms | 6.98ms | 2 to 0 |
+| heavy | 4x | 14.1 | 56.2 | 70.07ms | 17.11ms | 212 of 212 to 14 of 843 |
+
+The headline is the throttled heavy room: 14.1fps to 56.2fps, a four times
+improvement, with the worst frame falling from 116.6ms to 49.9ms. At full
+speed the heavy room now uses 42 percent of the frame budget instead of 73
+percent, and no longer drops a frame.
+
+## Where the time went
+
+Self time over 15 seconds in the heavy room at full speed.
+
+| Cost | Before | After | Change |
+|---|---|---|---|
+| Native `drawImage` | 6683ms | 1960ms | 3.4x less |
+| Webcam encode | 1546ms `toBlob` | 587ms `convertToBlob` | 2.6x less |
+| Interpolation | 175ms | 84ms | 2.1x less |
+| Script per frame | 10.62ms | 4.68ms | 2.3x less |
+
+Canvas calls per frame in the heavy room: `beginPath` 41.1 to 8.1, `stroke`
+27.0 to 5.0, `fill` 10.0 to 0.1, `createRadialGradient` 5.0 to 0. The sprite
+cache adds its own bookkeeping, 144ms of `rendered` and 113ms of `ready` over
+the window, which is the price of the 4.7 seconds it removed.
+
+Webcam decode latency in the throttled heavy room fell from 227ms average per
+frame to 49ms, so faces stay current under load instead of visibly lagging.
+
+## What was deliberately not done
+
+Three items from the backlog were dropped after measurement rather than
+implemented, each because the evidence did not justify the change.
+
+- The `stackGear` memo, the `getContext` hoist and the per-frame scene deps
+  object were all below the profiler's top eighteen, which puts each under
+  0.03ms per frame. Adding caches or module state for unmeasurable gains
+  would trade clarity for nothing.
+- Decode-time resizing, because captured frames are already 96 pixels and the
+  drawn bubble is 61 to 123 device pixels.
+
+Item 8, the 944 KB per second snapshot stream, remains deferred. It is still
+the largest allocator at 1.1 MB per 15 seconds and is unchanged by this work.

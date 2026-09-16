@@ -52,14 +52,18 @@ export class SnapshotBuffer {
 function interpolateStates(older: GameState, newer: GameState, t: number): GameState {
   return {
     ...newer,
-    players: newer.players.map(p => lerpById(older.players, p, t)),
-    enemies: newer.enemies.map(e => lerpById(older.enemies, e, t)),
-    projectiles: newer.projectiles.map(p => lerpById(older.projectiles, p, t))
+    players: lerpAll(older.players, newer.players, t),
+    enemies: lerpAll(older.enemies, newer.enemies, t),
+    projectiles: lerpAll(older.projectiles, newer.projectiles, t)
   }
 }
 
-function lerpById<T extends Positioned & { id: string | number }>(older: T[], entity: T, t: number): T {
-  const previous = older.find(e => e.id === entity.id)
+function lerpAll<T extends Positioned & { id: string | number }>(older: T[], newer: T[], t: number): T[] {
+  const previous = new Map(older.map(entity => [entity.id, entity]))
+  return newer.map(entity => lerpFrom(previous.get(entity.id), entity, t))
+}
+
+function lerpFrom<T extends Positioned>(previous: T | undefined, entity: T, t: number): T {
   if (!previous) return entity
   return {
     ...entity,

@@ -28,12 +28,29 @@ export function drawScene(deps: SceneDeps, state: GameState, selfId: string | un
   ctx.scale(scale, scale)
 
   drawArena(ctx)
-  for (const orb of state.orbs) drawOrb(ctx, orb.pos.x, orb.pos.y)
-  for (const enemy of state.enemies) drawEnemy(ctx, deps, enemy)
+  for (const orb of state.orbs) drawOrb(ctx, deps, orb.pos.x, orb.pos.y, scale)
+  for (const enemy of state.enemies) drawEnemy(ctx, deps, enemy, scale)
   for (const proj of state.projectiles) drawProjectile(ctx, proj.pos.x, proj.pos.y)
-  state.players.forEach((player, index) => drawPlayer(ctx, deps, player, index, player.id === selfId))
+  state.players.forEach((player, index) => drawPlayer(ctx, deps, player, index, player.id === selfId, scale))
 
   ctx.restore()
+}
+
+let arenaGrid: Path2D | undefined
+
+function gridPath(): Path2D {
+  if (arenaGrid) return arenaGrid
+  const path = new Path2D()
+  for (let x = 100; x < ARENA.width; x += 100) {
+    path.moveTo(x, 0)
+    path.lineTo(x, ARENA.height)
+  }
+  for (let y = 100; y < ARENA.height; y += 100) {
+    path.moveTo(0, y)
+    path.lineTo(ARENA.width, y)
+  }
+  arenaGrid = path
+  return path
 }
 
 function drawArena(ctx: CanvasRenderingContext2D): void {
@@ -41,35 +58,33 @@ function drawArena(ctx: CanvasRenderingContext2D): void {
   ctx.fillRect(0, 0, ARENA.width, ARENA.height)
   ctx.strokeStyle = INK.gridline
   ctx.lineWidth = 1
-  for (let x = 100; x < ARENA.width; x += 100) {
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, ARENA.height)
-    ctx.stroke()
-  }
-  for (let y = 100; y < ARENA.height; y += 100) {
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(ARENA.width, y)
-    ctx.stroke()
-  }
+  ctx.stroke(gridPath())
   ctx.strokeStyle = INK.baseline
   ctx.lineWidth = 4
   ctx.strokeRect(0, 0, ARENA.width, ARENA.height)
 }
 
-function drawOrb(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  const glow = ctx.createRadialGradient(x, y, 0, x, y, ORB_RADIUS * 2.4)
+const ORB_GLOW = ORB_RADIUS * 2.4
+
+function paintOrb(ctx: CanvasRenderingContext2D, width: number): void {
+  const radius = width / 2
+  const glow = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius)
   glow.addColorStop(0, GAME.orb)
   glow.addColorStop(1, 'rgba(25, 158, 112, 0)')
   ctx.fillStyle = glow
   ctx.beginPath()
-  ctx.arc(x, y, ORB_RADIUS * 2.4, 0, Math.PI * 2)
+  ctx.arc(radius, radius, radius, 0, Math.PI * 2)
   ctx.fill()
   ctx.fillStyle = '#8ff0c8'
   ctx.beginPath()
-  ctx.arc(x, y, ORB_RADIUS * 0.6, 0, Math.PI * 2)
+  ctx.arc(radius, radius, width * 0.125, 0, Math.PI * 2)
   ctx.fill()
+}
+
+function drawOrb(ctx: CanvasRenderingContext2D, deps: SceneDeps, x: number, y: number, scale: number): void {
+  const size = ORB_GLOW * 2
+  const sprite = deps.sprites.rendered('orb', size * scale, size * scale, paintOrb)
+  ctx.drawImage(sprite, x - ORB_GLOW, y - ORB_GLOW, size, size)
 }
 
 function drawProjectile(ctx: CanvasRenderingContext2D, x: number, y: number): void {
@@ -83,9 +98,9 @@ function drawProjectile(ctx: CanvasRenderingContext2D, x: number, y: number): vo
   ctx.fill()
 }
 
-function drawEnemy(ctx: CanvasRenderingContext2D, deps: SceneDeps, enemy: EnemyState): void {
-  const sprite = deps.sprites.ready(designEnemy(deps.design, enemy.kind)?.art ?? '')
+function drawEnemy(ctx: CanvasRenderingContext2D, deps: SceneDeps, enemy: EnemyState, scale: number): void {
   const size = enemy.radius * 2.2
+  const sprite = deps.sprites.bitmap(designEnemy(deps.design, enemy.kind)?.art ?? '', size * scale, size * scale)
   if (sprite) {
     ctx.drawImage(sprite, enemy.pos.x - size / 2, enemy.pos.y - size / 2, size, size)
   } else {
@@ -99,7 +114,7 @@ function drawEnemy(ctx: CanvasRenderingContext2D, deps: SceneDeps, enemy: EnemyS
   }
 }
 
-function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: PlayerState, index: number, isSelf: boolean): void {
+function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: PlayerState, index: number, isSelf: boolean, scale: number): void {
   const { x, y } = player.pos
   const r = PLAYER_RADIUS
   const color = playerColor(index)
@@ -134,7 +149,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   ctx.arc(x, y, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  for (const worn of stackGear(player.gear, id => designGear(deps.design, id)?.slot, player.id, r)) drawGear(ctx, deps, worn, x, y, r)
+  for (const worn of stackGear(player.gear, id => designGear(deps.design, id)?.slot, player.id, r)) drawGear(ctx, deps, worn, x, y, r, scale)
 
   ctx.fillStyle = INK.secondary
   ctx.font = '600 16px system-ui, sans-serif'
@@ -144,12 +159,14 @@ function drawPlayer(ctx: CanvasRenderingContext2D, deps: SceneDeps, player: Play
   drawBar(ctx, x, y + r + 28, r * 2, 6, player.hp / player.stats.maxHp, GAME.hpGood)
 }
 
-function drawGear(ctx: CanvasRenderingContext2D, deps: SceneDeps, worn: WornGear, x: number, y: number, r: number): void {
+function drawGear(ctx: CanvasRenderingContext2D, deps: SceneDeps, worn: WornGear, x: number, y: number, r: number, scale: number): void {
   const item = designGear(deps.design, worn.gearId)
   if (!item) return
-  const sprite = deps.sprites.ready(item.art)
+  const image = deps.sprites.ready(item.art)
+  if (!image) return
+  const { width, height, centerYOffset } = placeGear(item.slot, r, image.naturalHeight / image.naturalWidth)
+  const sprite = deps.sprites.bitmap(item.art, width * scale, height * scale)
   if (!sprite) return
-  const { width, height, centerYOffset } = placeGear(item.slot, r, sprite.naturalHeight / sprite.naturalWidth)
   const centerX = x + worn.xOffset
   const centerY = y + centerYOffset + worn.yOffset
   ctx.save()

@@ -1,0 +1,169 @@
+{
+  "scenario": "light",
+  "throttle": 1,
+  "seconds": 15,
+  "bots": 0,
+  "frames": {
+    "count": 900,
+    "fps": 60,
+    "meanMs": 16.65,
+    "p50Ms": 16.7,
+    "p95Ms": 16.7,
+    "p99Ms": 16.8,
+    "maxMs": 16.8,
+    "over16ms": 365,
+    "over33ms": 0
+  },
+  "entities": {
+    "snapshots": 299,
+    "enemiesMean": 3,
+    "enemiesMax": 5,
+    "projectilesMean": 1,
+    "orbsMean": 7,
+    "players": 1,
+    "phases": {
+      "fighting": 285,
+      "shopping": 11,
+      "countdown": 3
+    },
+    "snapshotKbMean": 1.8,
+    "snapshotKbPerSecond": 35
+  },
+  "budget": {
+    "scriptMsPerFrame": 1.37,
+    "styleMsPerFrame": 0.16,
+    "layoutMsPerFrame": 0.2,
+    "taskMsPerFrame": 3.21,
+    "jsonParseMsPerFrame": 0.02,
+    "bitmapMsPerFrame": 0
+  },
+  "json": {
+    "count": 299,
+    "ms": 18.6,
+    "bytes": 537085,
+    "kb": 524.5
+  },
+  "bitmaps": {
+    "count": 0,
+    "ms": 0
+  },
+  "drawCallsPerFrame": {
+    "drawImage": 11.7,
+    "beginPath": 5,
+    "arc": 5,
+    "fillRect": 4.6,
+    "fill": 3,
+    "save": 2,
+    "stroke": 2,
+    "restore": 2,
+    "translate": 1,
+    "scale": 1,
+    "clip": 1,
+    "fillText": 1
+  },
+  "hotFunctions": [
+    {
+      "name": "(idle) · :0",
+      "ms": 12324.63
+    },
+    {
+      "name": "(program) · :0",
+      "ms": 1503.76
+    },
+    {
+      "name": "convertToBlob · :0",
+      "ms": 540.12
+    },
+    {
+      "name": "drawImage · :0",
+      "ms": 276.93
+    },
+    {
+      "name": "arrayBuffer · :0",
+      "ms": 45.97
+    },
+    {
+      "name": "updateHud · index-BfNjrqjg.js:1600",
+      "ms": 34.76
+    },
+    {
+      "name": "drawPlayer · index-BfNjrqjg.js:1473",
+      "ms": 28.31
+    },
+    {
+      "name": "(garbage collector) · :0",
+      "ms": 24.95
+    },
+    {
+      "name": "send · :0",
+      "ms": 24.39
+    },
+    {
+      "name": "JSON.parse · :22",
+      "ms": 22.7
+    },
+    {
+      "name": "frame · index-BfNjrqjg.js:3176",
+      "ms": 17.38
+    },
+    {
+      "name": "drawScene · index-BfNjrqjg.js:1389",
+      "ms": 14.58
+    },
+    {
+      "name": "sample · index-BfNjrqjg.js:977",
+      "ms": 14.01
+    },
+    {
+      "name": "setProperty · :0",
+      "ms": 13.73
+    },
+    {
+      "name": "rendered · index-BfNjrqjg.js:1239",
+      "ms": 12.33
+    },
+    {
+      "name": "play · index-BfNjrqjg.js:2214",
+      "ms": 11.21
+    },
+    {
+      "name": "clip · :0",
+      "ms": 10.93
+    },
+    {
+      "name": "fillText · :0",
+      "ms": 10.65
+    }
+  ],
+  "allocators": [
+    {
+      "name": "JSON.parse · :22",
+      "kb": 60.3
+    },
+    {
+      "name": "innerSerialize · :186",
+      "kb": 16.8
+    },
+    {
+      "name": "tick · :14",
+      "kb": 10.1
+    },
+    {
+      "name": "isURL · :50",
+      "kb": 8.1
+    },
+    {
+      "name": "placeGear · index-BfNjrqjg.js:1309",
+      "kb": 4.1
+    },
+    {
+      "name": "(anonymous) · index-BfNjrqjg.js:1319",
+      "kb": 4
+    },
+    {
+      "name": "syncScreens · index-BfNjrqjg.js:3132",
+      "kb": 4
+    }
+  ],
+  "allocatedKbTotal": 107.4
+}
